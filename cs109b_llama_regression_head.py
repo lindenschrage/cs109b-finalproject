@@ -23,6 +23,8 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.regularizers import l2
 
 
 
@@ -63,10 +65,10 @@ print(tweet_annotation[:5])
 class SentimentRegressionModel(keras.Model):
     def __init__(self):
         super(SentimentRegressionModel, self).__init__()
-        self.dense1 = keras.layers.Dense(4096, activation='relu')  
-        self.dropout1 = Dropout(0.2)
-        self.dense2 = keras.layers.Dense(300, activation='relu') 
-        self.dropout2 = Dropout(0.2)
+        self.dense1 = keras.layers.Dense(4096, activation='relu', kernel_regularizer=l2(0.01))  
+        self.dropout1 = Dropout(0.4)
+        self.dense2 = keras.layers.Dense(300, activation='relu', kernel_regularizer=l2(0.01)) 
+        self.dropout2 = Dropout(0.4)
         self.dense4 = keras.layers.Dense(1, activation='linear')
 
     def call(self, inputs):
@@ -93,12 +95,12 @@ X_train1, X_test, y_train1, y_test = train_test_split(
 X_train, X_val, y_train, y_val = train_test_split(
     X_train1,
     y_train1,
-    test_size=0.1,
+    test_size=0.2,
     random_state=109
 )
 
 lr_schedule = keras.optimizers.schedules.ExponentialDecay(
-    initial_learning_rate=1e-4,
+    initial_learning_rate=1e-5,
     decay_steps=10000,
     decay_rate=0.9)
 
@@ -117,7 +119,7 @@ history = model.fit(
     X_train1, y_train1,
     validation_data=(X_test, y_test),
     epochs=20,
-    batch_size=64,
+    batch_size=8,
     callbacks=[early_stopping_monitor]
 )
 history_df = pd.DataFrame(history.history)
