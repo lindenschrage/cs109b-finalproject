@@ -114,7 +114,7 @@ model.compile(optimizer=opt, loss='mse', metrics=['mse'])
 history = model.fit(
     X_train1, y_train1,
     validation_data=(X_test, y_test),
-    epochs=20,
+    epochs=30,
     batch_size=8,
     callbacks=[early_stopping_monitor]
 )
