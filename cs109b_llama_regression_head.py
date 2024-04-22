@@ -32,7 +32,8 @@ tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=acc
 tokenizer.pad_token_id = (0)
 tokenizer.padding_side = "left"
 
-url = 'https://raw.githubusercontent.com/lindenschrage/cs109b-finalproject/main/dataframe.csv'
+#url = 'https://raw.githubusercontent.com/lindenschrage/cs109b-finalproject/main/dataframe.csv'
+url = '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/dataframe.csv'
 df = pd.read_csv(url)
 df.head()
 
