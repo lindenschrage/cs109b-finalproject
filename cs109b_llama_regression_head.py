@@ -65,9 +65,47 @@ print(tweet_annotation[:5])
 class SentimentRegressionModel(keras.Model):
     def __init__(self):
         super(SentimentRegressionModel, self).__init__()
-        self.dense1 = keras.layers.Dense(500, activation='relu', kernel_regularizer=l2(0.02))  
+        self.dense1 = keras.layers.Dense(300, activation='relu', kernel_regularizer=l2(0.02))  
         self.dropout1 = Dropout(0.5)
-        self.dense2 = keras.layers.Dense(500, activation='relu', kernel_regularizer=l2(0.02)) 
+        self.dense2 = keras.layers.Dense(300, activation='relu', kernel_regularizer=l2(0.02)) 
+        self.dropout2 = Dropout(0.5)
+        self.dense3 = keras.layers.Dense(1, activation='linear')
+
+    def call(self, inputs):
+        x = self.dense1(inputs)
+        x = self.dropout1(x)
+        x = self.dense2(x)
+        x = self.dropout2(x) 
+        outputs = self.dense3(x)
+        return outputs
+    
+class SentimentRegressionModel1(keras.Model):
+    def __init__(self):
+        super(SentimentRegressionModel1, self).__init__()
+        self.dense1 = keras.layers.Dense(100, activation='relu', kernel_regularizer=l2(0.02))  
+        self.dropout1 = Dropout(0.5)
+        self.dense2 = keras.layers.Dense(100, activation='relu', kernel_regularizer=l2(0.02)) 
+        self.dropout2 = Dropout(0.5)
+        self.dense3 = keras.layers.Dense(100, activation='relu', kernel_regularizer=l2(0.02)) 
+        self.dropout3 = Dropout(0.5)
+        self.dense4 = keras.layers.Dense(1, activation='linear')
+
+    def call(self, inputs):
+        x = self.dense1(inputs)
+        x = self.dropout1(x)
+        x = self.dense2(x)
+        x = self.dropout2(x) 
+        x = self.dense3(x)
+        x = self.dropout3(x) 
+        outputs = self.dense4(x)
+        return outputs
+    
+class SentimentRegressionModel2(keras.Model):
+    def __init__(self):
+        super(SentimentRegressionModel2, self).__init__()
+        self.dense1 = keras.layers.Dense(500, activation='relu', kernel_regularizer=l2(0.03))  
+        self.dropout1 = Dropout(0.5)
+        self.dense2 = keras.layers.Dense(500, activation='relu', kernel_regularizer=l2(0.03)) 
         self.dropout2 = Dropout(0.5)
         self.dense3 = keras.layers.Dense(1, activation='linear')
 
@@ -125,8 +163,35 @@ history = model.fit(
 history_df = pd.DataFrame(history.history)
 history_df.to_csv('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/history.csv', index=False)
 
+####
+model1 = SentimentRegressionModel1()
+model1.compile(optimizer=opt, loss='mse', metrics=['mse'])
+history1 = model1.fit(
+    X_train1, y_train1,
+    validation_data=(X_test, y_test),
+    epochs=20,
+    batch_size=8,
+    callbacks=[early_stopping_monitor]
+)
+history_df1 = pd.DataFrame(history1.history)
+history_df1.to_csv('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/history1.csv', index=False)
 
-def plot_loss(history):
+model2 = SentimentRegressionModel2()
+model2.compile(optimizer=opt, loss='mse', metrics=['mse'])
+history2 = model2.fit(
+    X_train1, y_train1,
+    validation_data=(X_test, y_test),
+    epochs=20,
+    batch_size=8,
+    callbacks=[early_stopping_monitor]
+)
+history_df2 = pd.DataFrame(history2.history)
+history_df2.to_csv('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/history2.csv', index=False)
+
+
+######
+
+def plot_loss(history, path):
     plt.figure(figsize=(10, 5))
     plt.plot(history.history['loss'], label='Training Loss')
     plt.plot(history.history['val_loss'], label='Validation Loss')
@@ -136,11 +201,13 @@ def plot_loss(history):
     plt.legend()
     plt.grid(True)
     plt.show()
-    plt.savefig('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/loss.png')
+    plt.savefig(path)
 
-plot_loss(history)
+plot_loss(history, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/loss.png')
+plot_loss(history1, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/loss1.png')
+plot_loss(history2, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/loss2.png')
 
-def plot_mse(history):
+def plot_mse(history, path):
     plt.figure(figsize=(10, 5))
     plt.plot(history.history['mse'], label='Training MSE')
     plt.plot(history.history['val_mse'], label='Validation MSE')
@@ -150,6 +217,9 @@ def plot_mse(history):
     plt.legend()
     plt.grid(True)
     plt.show()
-    plt.savefig('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/mse.png')
+    plt.savefig(path)
 
-plot_mse(history)
+plot_mse(history,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/mse.png')
+plot_mse(history1,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/mse1.png')
+plot_mse(history1,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/mse2.png')
+
