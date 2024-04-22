@@ -92,10 +92,12 @@ lr_schedule = keras.optimizers.schedules.ExponentialDecay(
     decay_steps=10000,
     decay_rate=0.9)
 opt = keras.optimizers.Adam(learning_rate=lr_schedule)
-
 model = SentimentRegressionModel()
 model.compile(optimizer=opt, loss='mse', metrics=['mse'])
-history = model.fit(X_train1, y_train1, validation_data=(X_test, y_test), epochs=100, batch_size=8)
+history = model.fit(X_train1, y_train1, validation_data=(X_test, y_test), epochs=20, batch_size=64)
+history_df = pd.DataFrame(history.history)
+history_df.to_csv('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/history.csv', index=False)
+
 
 def plot_loss(history):
     plt.figure(figsize=(10, 5))
@@ -107,5 +109,7 @@ def plot_loss(history):
     plt.legend()
     plt.grid(True)
     plt.show()
+    plt.savefig('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/loss.png')
 
 plot_loss(history)
+
