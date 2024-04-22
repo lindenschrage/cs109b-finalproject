@@ -65,7 +65,7 @@ print(tweet_annotation[:5])
 class SentimentRegressionModel(keras.Model):
     def __init__(self):
         super(SentimentRegressionModel, self).__init__()
-        self.dense1 = keras.layers.Dense(2000, activation='relu', kernel_regularizer=l2(0.03))  
+        self.dense1 = keras.layers.Dense(2000, activation='relu', kernel_regularizer=l2(0.02))  
         self.dropout1 = Dropout(0.5)
         self.dense3 = keras.layers.Dense(1, activation='linear')
 
@@ -114,7 +114,7 @@ model.compile(optimizer=opt, loss='mse', metrics=['mse'])
 history = model.fit(
     X_train1, y_train1,
     validation_data=(X_test, y_test),
-    epochs=30,
+    epochs=20,
     batch_size=8,
     callbacks=[early_stopping_monitor]
 )
