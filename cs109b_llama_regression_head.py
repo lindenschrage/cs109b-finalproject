@@ -60,11 +60,15 @@ class SentimentRegressionModel(keras.Model):
     def __init__(self):
         super(SentimentRegressionModel, self).__init__()
         self.dense1 = keras.layers.Dense(4096, activation='relu')
-        self.dense2 = keras.layers.Dense(1, activation='linear')
+        self.dense2 = keras.layers.Dense(500, activation='relu')
+        self.dense3 = keras.layers.Dense(200, activation='relu')
+        self.dense4 = keras.layers.Dense(1, activation='linear')
 
     def call(self, inputs):
         x = self.dense1(inputs)
-        outputs = self.dense2(x)
+        x = self.dense2(x)
+        x = self.dense3(x)
+        outputs = self.dense4(x)
         return outputs
 
 top_layers_array = np.vstack(top_layers)
