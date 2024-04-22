@@ -136,3 +136,16 @@ def plot_loss(history):
 
 plot_loss(history)
 
+def plot_mse(history):
+    plt.figure(figsize=(10, 5))
+    plt.plot(history.history['mse'], label='Training MSE')
+    plt.plot(history.history['val_mse'], label='Validation MSE')
+    plt.title('Training and Validation MSE')
+    plt.xlabel('Epochs')
+    plt.ylabel('MSE')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+    plt.savefig('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/mse.png')
+
+plot_mse(history)
