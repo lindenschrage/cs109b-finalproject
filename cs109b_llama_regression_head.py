@@ -21,6 +21,10 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.callbacks import EarlyStopping
+
+
 
 from torch.nn import MSELoss
 
@@ -59,15 +63,17 @@ print(tweet_annotation[:5])
 class SentimentRegressionModel(keras.Model):
     def __init__(self):
         super(SentimentRegressionModel, self).__init__()
-        self.dense1 = keras.layers.Dense(4096, activation='relu')
-        self.dense2 = keras.layers.Dense(500, activation='relu')
-        self.dense3 = keras.layers.Dense(200, activation='relu')
+        self.dense1 = keras.layers.Dense(4096, activation='relu')  
+        self.dropout1 = Dropout(0.2)
+        self.dense2 = keras.layers.Dense(300, activation='relu') 
+        self.dropout2 = Dropout(0.2)
         self.dense4 = keras.layers.Dense(1, activation='linear')
 
     def call(self, inputs):
         x = self.dense1(inputs)
+        x = self.dropout1(x)
         x = self.dense2(x)
-        x = self.dense3(x)
+        x = self.dropout2(x)
         outputs = self.dense4(x)
         return outputs
 
@@ -92,13 +98,28 @@ X_train, X_val, y_train, y_val = train_test_split(
 )
 
 lr_schedule = keras.optimizers.schedules.ExponentialDecay(
-    initial_learning_rate=1e-5,
+    initial_learning_rate=1e-4,
     decay_steps=10000,
     decay_rate=0.9)
+
+early_stopping_monitor = EarlyStopping(
+    monitor='val_loss',
+    patience=5,
+    verbose=1,
+    restore_best_weights=True
+)
+
+
 opt = keras.optimizers.Adam(learning_rate=lr_schedule)
 model = SentimentRegressionModel()
 model.compile(optimizer=opt, loss='mse', metrics=['mse'])
-history = model.fit(X_train1, y_train1, validation_data=(X_test, y_test), epochs=20, batch_size=64)
+history = model.fit(
+    X_train1, y_train1,
+    validation_data=(X_test, y_test),
+    epochs=20,
+    batch_size=64,
+    callbacks=[early_stopping_monitor]
+)
 history_df = pd.DataFrame(history.history)
 history_df.to_csv('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/history.csv', index=False)
 
