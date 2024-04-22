@@ -30,7 +30,7 @@ import pickle
 
 
 from torch.nn import MSELoss
-'''
+
 access_token = "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"
 
 base_model = LlamaModel.from_pretrained("meta-llama/Llama-2-7b-hf", token=access_token).to('cuda')
@@ -54,9 +54,9 @@ with torch.no_grad():
       last_hidden_state = output.last_hidden_state
       last_token_hidden_state = last_hidden_state[:, -1, :]
       top_layers.append(last_token_hidden_state.cpu().detach().numpy()) 
-'''
-top_layer_pickle_path = '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/top_layers.pkl'
-'''
+
+top_layer_pickle_path = '/n/home09/lschrage/projects/cs109b/top_layers.pkl'
+
 with open(top_layer_pickle_path, 'wb') as f:
     pickle.dump(top_layers, f)
 '''
@@ -232,3 +232,4 @@ plot_mse(history,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/mse.png
 plot_mse(history1,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/mse1.png')
 plot_mse(history1,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/mse2.png')
 
+'''
