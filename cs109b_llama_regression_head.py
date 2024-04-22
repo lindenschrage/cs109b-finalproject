@@ -25,6 +25,7 @@ from tensorflow.keras.layers import Dropout
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.regularizers import l2
+import pickle
 
 
 
@@ -52,11 +53,17 @@ with torch.no_grad():
       output = base_model(**tokens, return_dict=True)
       last_hidden_state = output.last_hidden_state
       last_token_hidden_state = last_hidden_state[:, -1, :]
-      top_layers.append(last_token_hidden_state)
+      top_layers.append(last_token_hidden_state.cpu().detach().numpy()) 
 
-top_layers = [tensor.cpu().detach().numpy() for tensor in top_layers]
+top_layer_pickle_path = '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/top_layers.pkl'
 
-print(top_layers[:5])
+with open(top_layer_pickle_path, 'wb') as f:
+    pickle.dump(top_layers, f)
+
+with open(top_layer_pickle_path, 'rb') as f:
+    top_layers_loaded = pickle.load(f)
+
+print(top_layers_loaded[:5])
 
 tweet_annotation = list(df['TweetAvgAnnotation'])
 
@@ -117,7 +124,7 @@ class SentimentRegressionModel2(keras.Model):
         outputs = self.dense3(x)
         return outputs
 
-top_layers_array = np.vstack(top_layers)
+top_layers_array = np.vstack(top_layers_loaded)
 scaler = StandardScaler()
 top_layers_scaled = scaler.fit_transform(top_layers_array)
 
@@ -164,8 +171,9 @@ history_df = pd.DataFrame(history.history)
 history_df.to_csv('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/history.csv', index=False)
 
 ####
+opt1 = keras.optimizers.Adam(learning_rate=lr_schedule)
 model1 = SentimentRegressionModel1()
-model1.compile(optimizer=opt, loss='mse', metrics=['mse'])
+model1.compile(optimizer=opt1, loss='mse', metrics=['mse'])
 history1 = model1.fit(
     X_train1, y_train1,
     validation_data=(X_test, y_test),
@@ -176,8 +184,9 @@ history1 = model1.fit(
 history_df1 = pd.DataFrame(history1.history)
 history_df1.to_csv('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/history1.csv', index=False)
 
+opt2 = keras.optimizers.Adam(learning_rate=lr_schedule)
 model2 = SentimentRegressionModel2()
-model2.compile(optimizer=opt, loss='mse', metrics=['mse'])
+model2.compile(optimizer=opt2, loss='mse', metrics=['mse'])
 history2 = model2.fit(
     X_train1, y_train1,
     validation_data=(X_test, y_test),
