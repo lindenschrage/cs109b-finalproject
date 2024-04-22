@@ -65,10 +65,10 @@ print(tweet_annotation[:5])
 class SentimentRegressionModel(keras.Model):
     def __init__(self):
         super(SentimentRegressionModel, self).__init__()
-        self.dense1 = keras.layers.Dense(2000, activation='relu', kernel_regularizer=l2(0.01))  
-        self.dropout1 = Dropout(0.4)
-        self.dense2 = keras.layers.Dense(500, activation='relu', kernel_regularizer=l2(0.01)) 
-        self.dropout2 = Dropout(0.4)
+        self.dense1 = keras.layers.Dense(500, activation='relu', kernel_regularizer=l2(0.02))  
+        self.dropout1 = Dropout(0.5)
+        self.dense2 = keras.layers.Dense(500, activation='relu', kernel_regularizer=l2(0.02)) 
+        self.dropout2 = Dropout(0.5)
         self.dense3 = keras.layers.Dense(1, activation='linear')
 
     def call(self, inputs):
@@ -100,7 +100,7 @@ X_train, X_val, y_train, y_val = train_test_split(
 )
 
 lr_schedule = keras.optimizers.schedules.ExponentialDecay(
-    initial_learning_rate=1e-5,
+    initial_learning_rate=1e-6,
     decay_steps=10000,
     decay_rate=0.9)
 
