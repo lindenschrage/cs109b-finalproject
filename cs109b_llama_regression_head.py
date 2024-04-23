@@ -216,5 +216,3 @@ def plot_mse(history, path):
 plot_mse(history,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/mse.png')
 plot_mse(history1,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/mse1.png')
 plot_mse(history1,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/mse2.png')
-
-'''
