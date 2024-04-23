@@ -54,7 +54,7 @@ tweet_annotation = list(df['TweetAvgAnnotation'])
 
 class SentimentRegressionModel(keras.Model):
     def __init__(self):
-        super(SentimentRegressionModel1, self).__init__()
+        super(SentimentRegressionModel, self).__init__()
         self.dense1 = keras.layers.Dense(400, activation='relu', kernel_regularizer=l2(0.1))  
         self.dropout1 = Dropout(0.5)
         self.dense2 = keras.layers.Dense(200, activation='relu', kernel_regularizer=l2(0.1)) 
@@ -96,7 +96,7 @@ class SentimentRegressionModel1(keras.Model):
     
 class SentimentRegressionModel2(keras.Model):
     def __init__(self):
-        super(SentimentRegressionModel1, self).__init__()
+        super(SentimentRegressionModel2, self).__init__()
         self.dense1 = keras.layers.Dense(200, activation='relu', kernel_regularizer=l2(0.2))  
         self.dropout1 = Dropout(0.5)
         self.dense2 = keras.layers.Dense(200, activation='relu', kernel_regularizer=l2(0.2)) 
