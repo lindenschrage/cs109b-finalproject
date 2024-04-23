@@ -128,7 +128,7 @@ X_train, X_val, y_train, y_val = train_test_split(
 )
 
 lr_schedule = keras.optimizers.schedules.ExponentialDecay(
-    initial_learning_rate=1e-5,
+    initial_learning_rate=1e-6,
     decay_steps=10000,
     decay_rate=0.9)
 
@@ -146,7 +146,7 @@ model.compile(optimizer=opt, loss='mse', metrics=['mse'])
 history = model.fit(
     X_train1, y_train1,
     validation_data=(X_test, y_test),
-    epochs=20,
+    epochs=25,
     batch_size=8,
     callbacks=[early_stopping_monitor]
 )
@@ -166,14 +166,14 @@ model1.compile(optimizer=opt1, loss='mse', metrics=['mse'])
 history1 = model1.fit(
     X_train1, y_train1,
     validation_data=(X_test, y_test),
-    epochs=20,
+    epochs=25,
     batch_size=8,
     callbacks=[early_stopping_monitor2]
 )
 history_df1 = pd.DataFrame(history1.history)
 history_df1.to_csv('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/history1.csv', index=False)
 
-early_stopping_monitor3 = EarlyStopping(
+early_stopping_monitor2 = EarlyStopping(
     monitor='val_loss',
     patience=10,
     verbose=1,
@@ -185,9 +185,9 @@ model2.compile(optimizer=opt2, loss='mse', metrics=['mse'])
 history2 = model2.fit(
     X_train1, y_train1,
     validation_data=(X_test, y_test),
-    epochs=20,
+    epochs=25,
     batch_size=8,
-    callbacks=[early_stopping_monitor3]
+    callbacks=[early_stopping_monitor2]
 )
 history_df2 = pd.DataFrame(history2.history)
 history_df2.to_csv('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/history2.csv', index=False)
@@ -225,4 +225,4 @@ def plot_mse(history, path):
 
 plot_mse(history,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/mse.png')
 plot_mse(history1,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/mse1.png')
-plot_mse(history1,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/mse2.png')
+plot_mse(history2,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/mse2.png')
