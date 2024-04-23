@@ -97,12 +97,12 @@ class SentimentRegressionModel1(keras.Model):
 class SentimentRegressionModel2(keras.Model):
     def __init__(self):
         super(SentimentRegressionModel2, self).__init__()
-        self.dense1 = keras.layers.Dense(200, activation='relu', kernel_regularizer=l2(0.2))  
-        self.dropout1 = Dropout(0.6)
-        self.dense2 = keras.layers.Dense(200, activation='relu', kernel_regularizer=l2(0.2)) 
-        self.dropout2 = Dropout(0.6)
-        self.dense3 = keras.layers.Dense(200, activation='relu', kernel_regularizer=l2(0.2)) 
-        self.dropout3 = Dropout(0.6)
+        self.dense1 = keras.layers.Dense(100, activation='relu', kernel_regularizer=l2(0.3))  
+        self.dropout1 = Dropout(0.5)
+        self.dense2 = keras.layers.Dense(100, activation='relu', kernel_regularizer=l2(0.25)) 
+        self.dropout2 = Dropout(0.5)
+        self.dense3 = keras.layers.Dense(100, activation='relu', kernel_regularizer=l2(0.25)) 
+        self.dropout3 = Dropout(0.5)
         self.dense4 = keras.layers.Dense(1, activation='linear')
 
     def call(self, inputs):
