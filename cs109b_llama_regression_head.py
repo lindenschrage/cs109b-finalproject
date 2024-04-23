@@ -137,8 +137,8 @@ X_train, X_val, y_train, y_val = train_test_split(
 
 lr_schedule = keras.optimizers.schedules.ExponentialDecay(
     initial_learning_rate=1e-6,
-    decay_steps=10000,
-    decay_rate=0.8)
+    decay_steps=20000,
+    decay_rate=0.7)
 
 early_stopping_monitor = EarlyStopping(
     monitor='val_loss',
