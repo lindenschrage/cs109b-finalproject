@@ -55,6 +55,27 @@ tweet_annotation = list(df['TweetAvgAnnotation'])
 class SentimentRegressionModel(keras.Model):
     def __init__(self):
         super(SentimentRegressionModel, self).__init__()
+        self.dense1 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.2))  
+        self.dropout1 = Dropout(0.5)
+        self.dense2 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.2)) 
+        self.dropout2 = Dropout(0.5)
+        self.dense3 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.2)) 
+        self.dropout3 = Dropout(0.5)
+        self.dense4 = keras.layers.Dense(1, activation='linear')
+
+    def call(self, inputs):
+        x = self.dense1(inputs)
+        x = self.dropout1(x)
+        x = self.dense2(x)
+        x = self.dropout2(x) 
+        x = self.dense3(x)
+        x = self.dropout3(x) 
+        outputs = self.dense4(x)
+        return outputs
+    
+class SentimentRegressionModel1(keras.Model):
+    def __init__(self):
+        super(SentimentRegressionModel1, self).__init__()
         self.dense1 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.25))  
         self.dropout1 = Dropout(0.5)
         self.dense2 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.25)) 
@@ -73,36 +94,15 @@ class SentimentRegressionModel(keras.Model):
         outputs = self.dense4(x)
         return outputs
     
-class SentimentRegressionModel1(keras.Model):
-    def __init__(self):
-        super(SentimentRegressionModel1, self).__init__()
-        self.dense1 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.25))  
-        self.dropout1 = Dropout(0.4)
-        self.dense2 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.25)) 
-        self.dropout2 = Dropout(0.4)
-        self.dense3 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.25)) 
-        self.dropout3 = Dropout(0.4)
-        self.dense4 = keras.layers.Dense(1, activation='linear')
-
-    def call(self, inputs):
-        x = self.dense1(inputs)
-        x = self.dropout1(x)
-        x = self.dense2(x)
-        x = self.dropout2(x) 
-        x = self.dense3(x)
-        x = self.dropout3(x) 
-        outputs = self.dense4(x)
-        return outputs
-    
 class SentimentRegressionModel2(keras.Model):
     def __init__(self):
         super(SentimentRegressionModel2, self).__init__()
-        self.dense1 = keras.layers.Dense(100, activation='relu', kernel_regularizer=l2(0.3))  
-        self.dropout1 = Dropout(0.3)
-        self.dense2 = keras.layers.Dense(100, activation='relu', kernel_regularizer=l2(0.25)) 
-        self.dropout2 = Dropout(0.3)
-        self.dense3 = keras.layers.Dense(100, activation='relu', kernel_regularizer=l2(0.25)) 
-        self.dropout3 = Dropout(0.3)
+        self.dense1 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.3))  
+        self.dropout1 = Dropout(0.5)
+        self.dense2 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.3)) 
+        self.dropout2 = Dropout(0.5)
+        self.dense3 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.3)) 
+        self.dropout3 = Dropout(0.5)
         self.dense4 = keras.layers.Dense(1, activation='linear')
 
     def call(self, inputs):
@@ -138,7 +138,7 @@ X_train, X_val, y_train, y_val = train_test_split(
 lr_schedule = keras.optimizers.schedules.ExponentialDecay(
     initial_learning_rate=1e-6,
     decay_steps=20000,
-    decay_rate=0.7)
+    decay_rate=0.6)
 
 early_stopping_monitor = EarlyStopping(
     monitor='val_loss',
