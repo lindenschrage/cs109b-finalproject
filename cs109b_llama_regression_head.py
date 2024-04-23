@@ -48,11 +48,9 @@ with open(top_layer_pickle_path, 'wb') as f:
 with open(top_layer_pickle_path, 'rb') as f:
     top_layers_loaded = pickle.load(f)
 
-print(top_layers_loaded[:5])
 
 tweet_annotation = list(df['TweetAvgAnnotation'])
 
-print(tweet_annotation[:5])
 
 class SentimentRegressionModel(keras.Model):
     def __init__(self):
@@ -130,13 +128,13 @@ X_train, X_val, y_train, y_val = train_test_split(
 )
 
 lr_schedule = keras.optimizers.schedules.ExponentialDecay(
-    initial_learning_rate=1e-6,
+    initial_learning_rate=1e-5,
     decay_steps=10000,
     decay_rate=0.9)
 
 early_stopping_monitor = EarlyStopping(
     monitor='val_loss',
-    patience=5,
+    patience=10,
     verbose=1,
     restore_best_weights=True
 )
