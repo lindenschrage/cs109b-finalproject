@@ -20,7 +20,6 @@ Original file is located at
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
 import re
 import bitsandbytes as bnb
 from sklearn.model_selection import train_test_split
@@ -185,7 +184,7 @@ train_params = TrainingArguments(
     optim="paged_adamw_32bit",
     save_steps=25,
     logging_steps=25,
-    learning_rate=1e-6, 
+    learning_rate=2e-5, 
     weight_decay=0.001,
     fp16=False,
     bf16=False,
