@@ -164,7 +164,7 @@ llama_model = LlamaForCausalLM.from_pretrained(
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
 
-llama_tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", padding=True, token=access_token)
+llama_tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=access_token)
 llama_tokenizer.pad_token = llama_tokenizer.eos_token
 llama_tokenizer.padding_side = "right"
 
@@ -212,6 +212,7 @@ train_params = TrainingArguments(
     group_by_length=True,
     lr_scheduler_type="linear",
     report_to="wandb",
+    max_seq_length = None,
     evaluation_strategy="steps",
     eval_steps=2000)
 
