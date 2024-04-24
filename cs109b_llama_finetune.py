@@ -35,6 +35,12 @@ from peft import LoraConfig, get_peft_model
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, HfArgumentParser, TrainingArguments, pipeline
 from trl import SFTTrainer
 from datasets import Dataset
+import wandb
+from sklearn.metrics import mean_squared_error
+
+import os
+os.environ["WANDB_PROJECT"]="twitter-sentiment-analysis"
+
 
 ## DATA PREPROCESSING
 '''
@@ -167,7 +173,13 @@ df_train = pd.DataFrame({
     "labels": y_train
 })
 
+df_val = pd.DataFrame({
+    "text": X_val['Prompt'],
+    "labels": y_val
+})
+
 train_dataset = Dataset.from_pandas(df_train)
+val_dataset = Dataset.from_pandas(df_val)
 
 peft_parameters = LoraConfig(
     lora_alpha=16,
@@ -176,11 +188,17 @@ peft_parameters = LoraConfig(
     bias="none",
     task_type="CAUSAL_LM"
 )
+
+def compute_metrics(eval_pred):
+    predictions, labels = eval_pred
+    rmse = mean_squared_error(labels, predictions, squared=False)
+    return {"rmse": rmse}
+
 train_params = TrainingArguments(
     output_dir="./results_modified",
-    num_train_epochs=1,
-    per_device_train_batch_size=4,
-    gradient_accumulation_steps=4,  
+    num_train_epochs=5,
+    per_device_train_batch_size=8,
+    gradient_accumulation_steps=8,  
     optim="paged_adamw_32bit",
     save_steps=25,
     logging_steps=25,
@@ -192,12 +210,15 @@ train_params = TrainingArguments(
     max_steps=-1,
     warmup_ratio=0.1,  
     group_by_length=True,
-    lr_scheduler_type="linear"  
+    lr_scheduler_type="linear",
+    report_to="wandb",
+    logging_steps=1
 )
 
 fine_tuning = SFTTrainer(
     model=llama_model,
     train_dataset=train_dataset,
+    eval_dataset=val_dataset,
     peft_config=peft_parameters,
     dataset_text_field="text",
     tokenizer=llama_tokenizer,
