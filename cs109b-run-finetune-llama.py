@@ -5,7 +5,7 @@ import torch
 from datasets import Dataset
 
 
-model_path = '/content/drive/My Drive/cs109b-finalproject/finetuned_model'
+model_path = '/n/home09/lschrage/projects/cs109b/finetuned_model'
 model = AutoModelForCausalLM.from_pretrained(model_path)
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 
