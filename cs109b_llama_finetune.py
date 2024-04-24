@@ -35,6 +35,7 @@ from peft import prepare_model_for_kbit_training
 from peft import LoraConfig, get_peft_model
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, HfArgumentParser, TrainingArguments, pipeline
 from trl import SFTTrainer
+from datasets import Dataset
 
 ## DATA PREPROCESSING
 '''
@@ -185,7 +186,7 @@ train_params = TrainingArguments(
     optim="paged_adamw_32bit",
     save_steps=25,
     logging_steps=25,
-    learning_rate=2e-4,
+    learning_rate=1e-6,
     weight_decay=0.001,
     fp16=False,
     bf16=False,
@@ -258,3 +259,5 @@ trainer = CustomTrainer(
     tokenizer=llama_tokenizer,
     compute_loss=custom_loss
 )
+
+'''
