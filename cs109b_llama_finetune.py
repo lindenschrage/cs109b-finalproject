@@ -201,7 +201,7 @@ train_params = TrainingArguments(
     gradient_accumulation_steps=8,  
     optim="paged_adamw_32bit",
     save_steps=25,
-    logging_steps=25,
+    logging_steps=1,
     learning_rate=2e-5, 
     weight_decay=0.001,
     fp16=False,
@@ -211,9 +211,7 @@ train_params = TrainingArguments(
     warmup_ratio=0.1,  
     group_by_length=True,
     lr_scheduler_type="linear",
-    report_to="wandb",
-    logging_steps=1
-)
+    report_to="wandb")
 
 fine_tuning = SFTTrainer(
     model=llama_model,
