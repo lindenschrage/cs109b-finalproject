@@ -123,7 +123,7 @@ def generate_train_prompt(tweet):
           determine if it is positive, neutral, or negative, and return the answer as a float value rounded to two decimal places
           between -3 (corresponding to a  negative sentiment) and 3 (corresponding to a positive sentiment).
 
-          [{tweet["Tweet"]}] = {tweet["TweetAvgAnnotation"]}
+          [{tweet["Tweet"]}] = 
           """.strip()
 def generate_test_prompt(tweet):
   return f"""
