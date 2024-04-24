@@ -212,7 +212,6 @@ train_params = TrainingArguments(
     group_by_length=True,
     lr_scheduler_type="linear",
     report_to="wandb",
-    max_seq_length = None,
     evaluation_strategy="steps",
     eval_steps=2000)
 
@@ -224,6 +223,7 @@ fine_tuning = SFTTrainer(
     dataset_text_field="text",
     tokenizer=llama_tokenizer,
     args=train_params,
+    max_seq_length = None,
     compute_metrics=compute_metrics
 )
 
