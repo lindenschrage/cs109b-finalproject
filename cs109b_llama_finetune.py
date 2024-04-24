@@ -196,13 +196,13 @@ def compute_metrics(eval_pred):
 
 train_params = TrainingArguments(
     output_dir="./results_modified",
-    num_train_epochs=5,
-    per_device_train_batch_size=8,
-    gradient_accumulation_steps=8,  
+    num_train_epochs=2,
+    per_device_train_batch_size=4,
+    gradient_accumulation_steps=4,  
     optim="paged_adamw_32bit",
     save_steps=25,
     logging_steps=1,
-    learning_rate=2e-5, 
+    learning_rate=1e-6, 
     weight_decay=0.001,
     fp16=False,
     bf16=False,
@@ -211,7 +211,10 @@ train_params = TrainingArguments(
     warmup_ratio=0.1,  
     group_by_length=True,
     lr_scheduler_type="linear",
-    report_to="wandb")
+    report_to="wandb",
+    compute_metrics=compute_metrics,
+    evaluation_strategy="steps",
+    eval_steps=2000)
 
 fine_tuning = SFTTrainer(
     model=llama_model,
