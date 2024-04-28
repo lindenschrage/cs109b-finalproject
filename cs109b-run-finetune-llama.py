@@ -1,4 +1,6 @@
 
+## Evaluate model once we have finetuned it
+
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from sklearn.metrics import accuracy_score, classification_report
 import torch
