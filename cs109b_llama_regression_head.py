@@ -48,9 +48,7 @@ with open(top_layer_pickle_path, 'wb') as f:
 with open(top_layer_pickle_path, 'rb') as f:
     top_layers_loaded = pickle.load(f)
 
-
 tweet_annotation = list(df['TweetAvgAnnotation'])
-
 
 class SentimentRegressionModel(keras.Model):
     def __init__(self):
@@ -119,7 +117,6 @@ history = model.fit(
 )
 history_df = pd.DataFrame(history.history)
 history_df.to_csv('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama_regression/history.csv', index=False)
-
 
 
 def plot_loss(history, path):
