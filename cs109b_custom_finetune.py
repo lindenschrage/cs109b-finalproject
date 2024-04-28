@@ -70,11 +70,11 @@ class TweetOptimismRegressor(PreTrainedModel):
         self.regressor = nn.Linear(100, 1)
         self.loss_fn = nn.MSELoss() if not hasattr(config, 'loss_fn') else config.loss_fn
 
-    def forward(self, input_ids, labels=None):
+    def forward(self, input_ids, attention_masks, labels=None):
       if input_ids is None:
           raise ValueError("input_ids must be provided")
 
-      llama_output = self.llama(input_ids=input_ids).last_hidden_state[:, -1, :]
+      llama_output = self.llama(input_ids=input_ids, attention_masks=attention_masks).last_hidden_state[:, -1, :]
       x = self.linear(llama_output)
       logits = self.regressor(x).squeeze()
 
@@ -167,4 +167,4 @@ fine_tuning = SFTTrainer(
 
 fine_tuning.train()
 
-fine_tuning.model.save_pretrained('/content/drive/My Drive/cs109b-finalproject/custom_finetuned_model')
+#fine_tuning.model.save_pretrained('/content/drive/My Drive/cs109b-finalproject/custom_finetuned_model')

@@ -35,6 +35,14 @@ df['Tweet-tokens'] = df['Tweet'].apply(get_embedding)
 top_layers = list(df['Tweet-tokens'])
 tweet_annotation = list(df['TweetAvgAnnotation'])
 
+top_layer_pickle_path = '/n/home09/lschrage/projects/cs109b/top_layers_base.pkl'
+'''
+with open(top_layer_pickle_path, 'wb') as f:
+    pickle.dump(top_layers, f)
+'''
+with open(top_layer_pickle_path, 'rb') as f:
+    top_layers_loaded = pickle.load(f)
+
 top_layers_array = np.vstack(top_layers)
 scaler = StandardScaler()
 top_layers_scaled = scaler.fit_transform(top_layers_array)
@@ -56,7 +64,7 @@ X_train, X_val, y_train, y_val = train_test_split(
 )
 
 lr_schedule = keras.optimizers.schedules.ExponentialDecay(
-    initial_learning_rate=1e-5,
+    initial_learning_rate=1e-6,
     decay_steps=10000,
     decay_rate=0.9)
 opt = keras.optimizers.Adam(learning_rate=lr_schedule)
@@ -136,4 +144,4 @@ def plot_mse(history, path):
 plot_mse(history,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/base-model/mse.png')
 
 bert_model.compile(optimizer=opt, loss='mse', metrics=['mse'])
-history = bert_model.fit(X_train1, y_train1, validation_data=(X_test, y_test), epochs=10, batch_size=8)
+history = bert_model.fit(X_train1, y_train1, validation_data=(X_test, y_test), epochs=30, batch_size=8)
