@@ -16,6 +16,10 @@ Original file is located at
 !pip install peft
 !pip install trl
 '''
+import torch
+from torch.utils.data import Dataset, DataLoader
+import pandas as pd
+from transformers import AutoTokenizer
 
 import pandas as pd
 import numpy as np
@@ -100,11 +104,11 @@ def label_value(x):
 df['Sentiment'] = df['TweetAvgAnnotation'].apply(label_value)
 '''
 
-'''
+
 url = 'https://raw.githubusercontent.com/lindenschrage/cs109b-finalproject/main/dataframe.csv'
 df = pd.read_csv(url)
 df.head()
-'''
+
 
 url = '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/dataframe.csv'
 df = pd.read_csv(url)
@@ -113,9 +117,9 @@ df.head()
 y = df['TweetAvgAnnotation']
 X = df
 
-X_train_full, X_test, y_true_train_full, y_true_test = train_test_split(X, y, test_size=0.2, random_state=109, stratify=X['Sentiment'])
+X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size=0.2, random_state=109, stratify=X['Sentiment'])
 
-X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_true_train_full, test_size=0.5, random_state=109, stratify=X_train_full['Sentiment'])
+X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, test_size=0.5, random_state=109, stratify=X_train_full['Sentiment'])
 
 def generate_train_prompt(tweet):
   return f"""
@@ -143,11 +147,18 @@ X_train_full.to_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/l
 X_train.to_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-X-train.pkl')
 X_test.to_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-X-test.pkl')
 X_val.to_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-X-val.pkl')
+y_train.to_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-y-train.pkl')
+y_val.to_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-y-val.pkl')
+y_test.to_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-y-test.pkl')
+
 
 X_train_full = pd.read_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-X-train-full.pkl')
 X_train = pd.read_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-X-train.pkl')
 X_test = pd.read_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-X-test.pkl')
 X_val = pd.read_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-X-val.pkl')
+y_train = pd.read_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-y-train.pkl')
+y_val = pd.read_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-y-val.pkl')
+y_test = pd.read_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-y-test.pkl')
 
 '''
 X_val['Random'] = np.round(np.random.uniform(-3, 3, size=len(X_val)), 2)
@@ -188,9 +199,65 @@ df_val = pd.DataFrame({
     "labels": y_val
 })
 
-train_dataset = Dataset.from_pandas(df_train)
-val_dataset = Dataset.from_pandas(df_val)
+# Define the dataset class
+class TweetDataset(Dataset):
+    def __init__(self, dataframe, tokenizer, max_length=512):
+        self.tokenizer = tokenizer
+        self.text = dataframe['Prompt'].tolist()
+        self.labels = dataframe['TweetAvgAnnotation'].tolist()
+        self.max_length = max_length
 
+    def __len__(self):
+        return len(self.text)
+
+    def __getitem__(self, idx):
+        text = str(self.text[idx])
+        labels = float(self.labels[idx])
+        
+        # Tokenizing the text
+        encoding = self.tokenizer.encode_plus(
+          text,
+          add_special_tokens=True,
+          max_length=self.max_length,
+          return_token_type_ids=False,
+          padding='max_length',
+          return_attention_mask=True,
+          return_tensors='pt',
+          truncation=True
+        )
+
+        return {
+          'input_ids': encoding['input_ids'].flatten(),
+          'attention_mask': encoding['attention_mask'].flatten(),
+          'labels': torch.tensor(labels, dtype=torch.float)
+        }
+
+train_dataset = TweetDataset(df_train, llama_tokenizer)
+val_dataset = TweetDataset(df_val, llama_tokenizer)
+
+train_params = TrainingArguments(
+    output_dir="./results_modified",
+    num_train_epochs=2,
+    per_device_train_batch_size=4,
+    gradient_accumulation_steps=4,
+    optim="paged_adamw_32bit",
+    save_steps=25,
+    logging_steps=1,
+    learning_rate=1e-5,
+    weight_decay=0.001,
+    fp16=False,
+    bf16=False,
+    max_grad_norm=1.0,
+    max_steps=-1,
+    warmup_ratio=0.1,
+    group_by_length=True,
+    lr_scheduler_type="linear",
+    report_to="wandb",
+    evaluation_strategy="steps",
+    eval_steps=2000
+)
+
+# PEFT Parameters (unchanged, correct as it was)
 peft_parameters = LoraConfig(
     lora_alpha=16,
     lora_dropout=0.1,
@@ -199,46 +266,19 @@ peft_parameters = LoraConfig(
     task_type="CAUSAL_LM"
 )
 
-def compute_metrics(eval_pred):
-    predictions, labels = eval_pred
-    rmse = mean_squared_error(labels, predictions, squared=False)
-    return {"rmse": rmse}
-
-train_params = TrainingArguments(
-    output_dir="./results_modified",
-    num_train_epochs=2,
-    per_device_train_batch_size=4,
-    gradient_accumulation_steps=4,  
-    optim="paged_adamw_32bit",
-    save_steps=25,
-    logging_steps=1,
-    learning_rate=1e-5, 
-    weight_decay=0.001,
-    fp16=False,
-    bf16=False,
-    max_grad_norm=1.0,  
-    max_steps=-1,
-    warmup_ratio=0.1,  
-    group_by_length=True,
-    lr_scheduler_type="linear",
-    report_to="wandb",
-    evaluation_strategy="steps",
-    eval_steps=2000)
-
+# Adjust the fine_tuning setup to use the datasets directly
 fine_tuning = SFTTrainer(
     model=llama_model,
-    train_dataset=train_dataset,
-    eval_dataset=val_dataset,
+    train_dataset=train_dataset,  # Use the dataset directly
+    eval_dataset=val_dataset,     # Use the dataset directly
     peft_config=peft_parameters,
-    dataset_text_field="text",
     tokenizer=llama_tokenizer,
     args=train_params,
-    max_seq_length = None,
     compute_metrics=compute_metrics
 )
 
+# Start training
 fine_tuning.train()
-
 
 ## YOU HAVE TO CHANGE THIS LINE TO YOUR LOCAL DIRECTORY
 
@@ -246,7 +286,6 @@ fine_tuning.train()
 fine_tuning.model.save_pretrained('/n/home09/lschrage/projects/cs109b/finetuned_model')
 
 
-print("Done")
 
 #model = AutoModelForCausalLM.from_pretrained('/content/drive/My Drive/cs109b-finalproject/finetuned_model')
 
