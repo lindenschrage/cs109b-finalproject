@@ -184,12 +184,12 @@ llama_tokenizer.pad_token = llama_tokenizer.eos_token
 llama_tokenizer.padding_side = "right"
 
 df_train = pd.DataFrame({
-    "text": X_train['Prompt'],
+    "text": X_train['Tweet'],
     "labels": y_train
 })
 
 df_val = pd.DataFrame({
-    "text": X_val['Prompt'],
+    "text": X_val['Tweet'],
     "labels": y_val
 })
 
