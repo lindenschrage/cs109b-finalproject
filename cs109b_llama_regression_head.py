@@ -14,8 +14,8 @@ from torch.optim import Adam
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import pickle
+from transformers import LlamaModel, LlamaTokenizer
 
-'''
 access_token = "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"
 
 base_model = LlamaModel.from_pretrained("meta-llama/Llama-2-7b-hf", token=access_token).to('cuda')
@@ -23,28 +23,37 @@ base_model = LlamaModel.from_pretrained("meta-llama/Llama-2-7b-hf", token=access
 tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llma-2-7b-hf", token=access_token, return_tensors = 'tf')
 tokenizer.pad_token_id = (0)
 tokenizer.padding_side = "left"
-'''
+
 #url = 'https://raw.githubusercontent.com/lindenschrage/cs109b-finalproject/main/dataframe.csv'
 url = '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/dataframe.csv'
 df = pd.read_csv(url)
 df.head()
-'''
+
 top_layers = []
 
 tweet_text = list(df['Tweet'])
 with torch.no_grad():
   for tweet in tweet_text:
       tokens = tokenizer(tweet, return_tensors='pt', padding=True).to('cuda')
-      output = base_model(**tokens, return_dict=True)
+      output = base_model(**tokens)
       last_hidden_state = output.last_hidden_state
-      last_token_hidden_state = last_hidden_state[:, -1, :]
-      top_layers.append(last_token_hidden_state.cpu().detach().numpy()) 
-'''
+weights_for_non_padding = tokens.attention_mask * torch.arange(start=1, end=last_hidden_state.shape[1] + 1).unsqueeze(0)
+sum_embeddings = torch.sum(last_hidden_state * weights_for_non_padding.unsqueeze(-1), dim=1)
+num_of_none_padding_tokens = torch.sum(weights_for_non_padding, dim=-1).unsqueeze(-1)
+sentence_embeddings = sum_embeddings / num_of_none_padding_tokens
+
+print(tokens.input_ids)
+print(weights_for_non_padding)
+print(num_of_none_padding_tokens)
+print(sentence_embeddings.shape)
+      #last_token_hidden_state = last_hidden_state[:, -1, :]
+      #top_layers.append(last_token_hidden_state.cpu().detach().numpy()) 
+
 top_layer_pickle_path = '/n/home09/lschrage/projects/cs109b/top_layers.pkl'
-'''
+
 with open(top_layer_pickle_path, 'wb') as f:
     pickle.dump(top_layers, f)
-'''
+
 with open(top_layer_pickle_path, 'rb') as f:
     top_layers_loaded = pickle.load(f)
 
