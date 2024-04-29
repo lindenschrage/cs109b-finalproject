@@ -22,7 +22,7 @@ df = pd.read_csv(url)
 from transformers import AutoTokenizer, AutoModel
 
 bert_tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
-bert_model = AutoModel.from_pretrained('distilbert-base-uncased').to('cuda')  
+bert_model = AutoModel.from_pretrained('distilbert-base-uncased', ).to('cuda')  
 def get_embedding(text):
     wrapped_input = bert_tokenizer(text, add_special_tokens=True, truncation=True,
                                    padding=True, max_length=300, return_tensors="pt").to('cuda')
@@ -37,10 +37,10 @@ top_layers = list(df['Tweet-tokens'])
 tweet_annotation = list(df['TweetAvgAnnotation'])
 
 top_layer_pickle_path = '/n/home09/lschrage/projects/cs109b/top_layers_base.pkl'
-'''
+
 with open(top_layer_pickle_path, 'wb') as f:
     pickle.dump(top_layers, f)
-'''
+
 with open(top_layer_pickle_path, 'rb') as f:
     top_layers_loaded = pickle.load(f)
 
