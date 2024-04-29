@@ -69,8 +69,25 @@ class TweetOptimismRegressor(PreTrainedModel):
         self.linear = nn.Linear(config.hidden_size, 100)
         self.regressor = nn.Linear(100, 1)
         self.loss_fn = nn.MSELoss() if not hasattr(config, 'loss_fn') else config.loss_fn
+    def forward(self, input_ids, attention_mask=None, labels=None):
+        if input_ids is None:
+            raise ValueError("input_ids must be provided")
 
-    def forward(self, input_ids, attention_masks, labels=None):
+        kwargs = {'input_ids': input_ids}
+        if attention_mask is not None:
+            kwargs['attention_mask'] = attention_mask
+
+        llama_output = self.llama(**kwargs).last_hidden_state[:, -1, :]
+        x = self.linear(llama_output)
+        logits = self.regressor(x).squeeze()
+
+        if labels is not None:
+            loss = self.loss_fn(logits, labels)
+            return {"loss": loss, "logits": logits}
+
+        return {"logits": logits}
+'''
+    def forward(self, input_ids, attention_mask=None, labels=None):
       if input_ids is None:
           raise ValueError("input_ids must be provided")
 
@@ -83,7 +100,7 @@ class TweetOptimismRegressor(PreTrainedModel):
           return {"loss": loss, "logits": logits}
 
       return {"logits": logits}
-
+'''
 def tokenize_texts(text_list):
     return tokenizer(text_list, padding=True, truncation=True, return_tensors="pt")
 
