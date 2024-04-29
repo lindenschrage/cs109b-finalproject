@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import pickle
 from transformers import LlamaModel, LlamaTokenizer
 
-access_token = "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"
+access_token = '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'
 
 base_model = LlamaModel.from_pretrained("meta-llama/Llama-2-7b-hf", token=access_token).to('cuda')
 
