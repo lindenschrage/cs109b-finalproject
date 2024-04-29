@@ -19,17 +19,20 @@ import pickle
 url = 'https://raw.githubusercontent.com/lindenschrage/cs109b-data/main/dataframe.csv'
 df = pd.read_csv(url)
 
-from transformers import BertTokenizer, BertModel
-bert_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-bert_model = BertModel.from_pretrained("bert-base-uncased", output_hidden_states=True).to('cuda')
+from transformers import AutoTokenizer, TFAutoModel
+
+bert_tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased', max_length=500, add_special_tokens=True, 
+                                               truncation=True, padding='max_length', return_tensors="tf")
+bert_model = TFAutoModel.from_pretrained('distilbert-base-uncased', output_hidden_states=True)
+print("model loaded")
 
 def get_embedding(text):
-    wrapped_input = bert_tokenizer(text, max_length=15, add_special_tokens=True, truncation=True,
-                                   padding='max_length', return_tensors="pt").to('cuda')
+    wrapped_input = bert_tokenizer(text)
+    print('1')
     with torch.no_grad():
       output = bert_model(**wrapped_input)
-      last_hidden_state, pooler_output = output[0], output[1]
-    return pooler_output.cpu().detach().numpy()
+      last_hidden_state = output[0][:, 0, :]
+    return last_hidden_state
 
 df['Tweet-tokens'] = df['Tweet'].apply(get_embedding)
 top_layers = list(df['Tweet-tokens'])
