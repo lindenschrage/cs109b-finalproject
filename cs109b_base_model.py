@@ -76,14 +76,14 @@ opt = keras.optimizers.Adam(learning_rate=lr_schedule)
 class SentimentRegressionModel(keras.Model):
     def __init__(self):
         super(SentimentRegressionModel, self).__init__()
-        self.dense1 = keras.layers.Dense(500, activation='relu', kernel_regularizer=l2(0.01))  
+        self.dense1 = keras.layers.Dense(800, activation='relu', kernel_regularizer=l2(0.01))  
         #self.dropout1 = Dropout(0.5)
-        self.dense2 = keras.layers.Dense(300, activation='relu', kernel_regularizer=l2(0.01)) 
+        self.dense2 = keras.layers.Dense(800, activation='relu', kernel_regularizer=l2(0.01)) 
         #self.dropout2 = Dropout(0.5)
-        self.dense3 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.01)) 
+        self.dense3 = keras.layers.Dense(800, activation='relu', kernel_regularizer=l2(0.01)) 
         #self.dropout3 = Dropout(0.5)
         self.dense4 = keras.layers.Dense(1, activation='linear')
-
+#500, 300, 150
     def call(self, inputs):
         x = self.dense1(inputs)
         #x = self.dropout1(x)
