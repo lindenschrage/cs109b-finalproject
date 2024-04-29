@@ -75,12 +75,12 @@ opt = keras.optimizers.Adam(learning_rate=lr_schedule)
 class SentimentRegressionModel(keras.Model):
     def __init__(self):
         super(SentimentRegressionModel, self).__init__()
-        self.dense1 = keras.layers.Dense(200, activation='relu', kernel_regularizer=l2(0.4))  
-        self.dropout1 = Dropout(0.5)
-        self.dense2 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.4)) 
-        self.dropout2 = Dropout(0.5)
-        self.dense3 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.4)) 
-        self.dropout3 = Dropout(0.5)
+        self.dense1 = keras.layers.Dense(500, activation='relu', kernel_regularizer=l2(0.1))  
+        #self.dropout1 = Dropout(0.5)
+        self.dense2 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.1)) 
+        #self.dropout2 = Dropout(0.5)
+        self.dense3 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.1)) 
+        #self.dropout3 = Dropout(0.5)
         self.dense4 = keras.layers.Dense(1, activation='linear')
 
     def call(self, inputs):
@@ -115,7 +115,7 @@ history = model.fit(
     callbacks=[early_stopping_monitor]
 )
 history_df = pd.DataFrame(history.history)
-history_df.to_csv('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/basemodel/history.csv', index=False)
+history_df.to_csv('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/basemodel-history.csv', index=False)
 
 
 def plot_loss(history, path):
@@ -130,7 +130,7 @@ def plot_loss(history, path):
     plt.show()
     plt.savefig(path)
 
-plot_loss(history, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/base-model/loss.png')
+plot_loss(history, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/basemodel-loss.png')
 
 def plot_mse(history, path):
     plt.figure(figsize=(10, 5))
@@ -144,7 +144,7 @@ def plot_mse(history, path):
     plt.show()
     plt.savefig(path)
 
-plot_mse(history,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/base-model/mse.png')
+plot_mse(history,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/basemodel-mse.png')
 
 bert_model.compile(optimizer=opt, loss='mse', metrics=['mse'])
 history = bert_model.fit(X_train1, y_train1, validation_data=(X_test, y_test), epochs=30, batch_size=8)
