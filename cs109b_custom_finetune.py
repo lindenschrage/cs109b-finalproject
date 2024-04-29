@@ -28,7 +28,7 @@ from torch.nn import MSELoss
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig, AutoTokenizer, TrainingArguments
 from peft import LoraConfig, get_peft_model
 from huggingface_hub import snapshot_download
-from transformers import LlamaModel, LlamaConfig
+from transformers import LlamaForCausalLM, LlamaTokenizer
 from transformers import PreTrainedModel, PretrainedConfig
 import torch.nn as nn
 
@@ -36,6 +36,11 @@ from peft import prepare_model_for_kbit_training, LoraConfig, get_peft_model
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from trl import SFTTrainer
 from datasets import Dataset
+import torch.nn as nn
+import torch
+from transformers.file_utils import ModelOutput
+from dataclasses import dataclass
+import torch
 
 access_token = "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"
 
@@ -46,11 +51,8 @@ url = '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/dataframe.csv'
 df = pd.read_csv(url)
 df.head()
 
-import torch.nn as nn
-import torch
-from transformers.file_utils import ModelOutput
-from dataclasses import dataclass
-import torch
+bmod = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", output_hidden_states=True, token=access_token)
+
 
 class TweetOptimismConfig(PretrainedConfig):
     model_type = "tweet_optimism"
@@ -65,7 +67,7 @@ class TweetOptimismRegressor(PreTrainedModel):
 
     def __init__(self, config):
         super(TweetOptimismRegressor, self).__init__(config)
-        self.llama = LlamaModel.from_pretrained("meta-llama/Llama-2-7b-hf", output_hidden_states=True, token=access_token)
+        self.llama = bmod
         self.linear = nn.Linear(config.hidden_size, 100)
         self.regressor = nn.Linear(100, 1)
         self.loss_fn = nn.MSELoss() if not hasattr(config, 'loss_fn') else config.loss_fn
