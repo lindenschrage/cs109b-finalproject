@@ -18,7 +18,7 @@ import pickle
 
 url = 'https://raw.githubusercontent.com/lindenschrage/cs109b-data/main/dataframe.csv'
 df = pd.read_csv(url)
-
+'''
 from transformers import AutoTokenizer, AutoModel
 
 bert_tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
@@ -36,17 +36,18 @@ with torch.no_grad():
 df['Tweet-tokens'] = embeddings.cpu().numpy().tolist()
 
 top_layers = list(df['Tweet-tokens'])
+'''
 tweet_annotation = list(df['TweetAvgAnnotation'])
 
 top_layer_pickle_path = '/n/home09/lschrage/projects/cs109b/top_layers_base.pkl'
-
+'''
 with open(top_layer_pickle_path, 'wb') as f:
     pickle.dump(top_layers, f)
-
+'''
 with open(top_layer_pickle_path, 'rb') as f:
     top_layers_loaded = pickle.load(f)
 
-top_layers_array = np.vstack(top_layers)
+top_layers_array = np.vstack(top_layers_loaded)
 scaler = StandardScaler()
 top_layers_scaled = scaler.fit_transform(top_layers_array)
 tweet_annotation_array = np.array(tweet_annotation)
@@ -75,12 +76,12 @@ opt = keras.optimizers.Adam(learning_rate=lr_schedule)
 class SentimentRegressionModel(keras.Model):
     def __init__(self):
         super(SentimentRegressionModel, self).__init__()
-        self.dense1 = keras.layers.Dense(200, activation='relu', kernel_regularizer=l2(0.4))  
-        self.dropout1 = Dropout(0.5)
-        self.dense2 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.4)) 
-        self.dropout2 = Dropout(0.5)
-        self.dense3 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.4)) 
-        self.dropout3 = Dropout(0.5)
+        self.dense1 = keras.layers.Dense(500, activation='relu', kernel_regularizer=l2(0.1))  
+        #self.dropout1 = Dropout(0.5)
+        self.dense2 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.1)) 
+        #self.dropout2 = Dropout(0.5)
+        self.dense3 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.1)) 
+        #self.dropout3 = Dropout(0.5)
         self.dense4 = keras.layers.Dense(1, activation='linear')
 
     def call(self, inputs):
@@ -115,7 +116,7 @@ history = model.fit(
     callbacks=[early_stopping_monitor]
 )
 history_df = pd.DataFrame(history.history)
-history_df.to_csv('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/basemodel/history.csv', index=False)
+history_df.to_csv('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/basemodel-history.csv', index=False)
 
 
 def plot_loss(history, path):
@@ -130,7 +131,7 @@ def plot_loss(history, path):
     plt.show()
     plt.savefig(path)
 
-plot_loss(history, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/base-model/loss.png')
+plot_loss(history, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/basemodel-loss.png')
 
 def plot_mse(history, path):
     plt.figure(figsize=(10, 5))
@@ -144,7 +145,7 @@ def plot_mse(history, path):
     plt.show()
     plt.savefig(path)
 
-plot_mse(history,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/base-model/mse.png')
+plot_mse(history,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/basemodel-mse.png')
 
 bert_model.compile(optimizer=opt, loss='mse', metrics=['mse'])
 history = bert_model.fit(X_train1, y_train1, validation_data=(X_test, y_test), epochs=30, batch_size=8)
