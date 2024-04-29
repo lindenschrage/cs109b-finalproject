@@ -21,15 +21,15 @@ df = pd.read_csv(url)
 
 from transformers import BertTokenizer, BertModel
 bert_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-bert_model = BertModel.from_pretrained("bert-base-uncased", output_hidden_states=True)
+bert_model = BertModel.from_pretrained("bert-base-uncased", output_hidden_states=True).to('cuda')
 
 def get_embedding(text):
     wrapped_input = bert_tokenizer(text, max_length=15, add_special_tokens=True, truncation=True,
-                                   padding='max_length', return_tensors="pt")
+                                   padding='max_length', return_tensors="pt").to('cuda')
     with torch.no_grad():
       output = bert_model(**wrapped_input)
       last_hidden_state, pooler_output = output[0], output[1]
-    return pooler_output
+    return pooler_output.cpu().detach().numpy()
 
 df['Tweet-tokens'] = df['Tweet'].apply(get_embedding)
 top_layers = list(df['Tweet-tokens'])
