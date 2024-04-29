@@ -74,7 +74,7 @@ class TweetOptimismRegressor(PreTrainedModel):
       if input_ids is None:
           raise ValueError("input_ids must be provided")
 
-      llama_output = self.llama(input_ids=input_ids, attention_masks=attention_masks).last_hidden_state[:, -1, :]
+      llama_output = self.llama(input_ids=input_ids, attention_mask=attention_mask).last_hidden_state[:, -1, :]
       x = self.linear(llama_output)
       logits = self.regressor(x).squeeze()
 

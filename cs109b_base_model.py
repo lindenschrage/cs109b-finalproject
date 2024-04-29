@@ -147,3 +147,18 @@ def plot_mse(history, path):
 
 plot_mse(history,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/basemodel-mse.png')
 
+
+def plot_predictions_vs_actual(model, X_test, y_test, path):
+    y_pred = model.predict(X_test)  
+    plt.figure(figsize=(10, 5))
+    plt.scatter(y_test, y_pred, alpha=0.5) 
+    plt.plot([min(y_test), max(y_test)], [min(y_test), max(y_test)], 'r--') 
+    plt.title('Actual vs Predicted Sentiment Scores')
+    plt.xlabel('Actual Scores')
+    plt.ylabel('Predicted Scores')
+    plt.grid(True)
+    plt.show()
+    plt.savefig(path)
+
+plot_predictions_vs_actual(model, X_test, y_test, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/basemodel-actual-vs-predicted.png')
+

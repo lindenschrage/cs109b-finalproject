@@ -139,6 +139,16 @@ X_train['Prompt'] = X_train.apply(generate_train_prompt, axis=1)
 X_test['Prompt'] = X_test.apply(generate_test_prompt, axis=1)
 X_val['Prompt'] = X_val.apply(generate_test_prompt, axis=1)
 
+X_train_full.to_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-X-train-full.pkl')
+X_train.to_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-X-train.pkl')
+X_test.to_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-X-test.pkl')
+X_val.to_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-X-val.pkl')
+
+X_train_full = pd.read_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-X-train-full.pkl')
+X_train = pd.read_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-X-train.pkl')
+X_test = pd.read_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-X-test.pkl')
+X_val = pd.read_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-X-val.pkl')
+
 '''
 X_val['Random'] = np.round(np.random.uniform(-3, 3, size=len(X_val)), 2)
 y_random = list(X_val['Random'])
