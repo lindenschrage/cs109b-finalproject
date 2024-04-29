@@ -42,7 +42,7 @@ from transformers.file_utils import ModelOutput
 from dataclasses import dataclass
 import torch
 
-access_token = "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"
+access_token = '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'
 
 tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf')
 tokenizer.pad_token = tokenizer.eos_token
@@ -78,8 +78,8 @@ class TweetOptimismRegressor(PreTrainedModel):
         kwargs = {'input_ids': input_ids}
         if attention_mask is not None:
             kwargs['attention_mask'] = attention_mask
-
-        llama_output = self.llama(**kwargs).hidden_states[-1].mean(dim=1)
+        with torch.nograd():
+            llama_output = self.llama(**kwargs).hidden_states[-1].mean(dim=1)
         x = self.linear(llama_output)
         logits = self.regressor(x).squeeze()
 
@@ -104,7 +104,9 @@ class TweetOptimismRegressor(PreTrainedModel):
       return {"logits": logits}
 '''
 def tokenize_texts(text_list):
-    return tokenizer(text_list, max_length=300,padding=True, truncation=True, return_tensors="pt")
+    with torch.nograd():
+        t = tokenizer(text_list, max_length=300,padding=True, truncation=True, return_tensors="pt")
+    return t
 
 df['Tweet-tokens'] = df['Tweet'].apply(tokenize_texts)
 
