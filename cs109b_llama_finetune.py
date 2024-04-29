@@ -197,7 +197,7 @@ df_val = pd.DataFrame({
 class TweetDataset(Dataset):
     def __init__(self, dataframe, tokenizer, max_length=512):
         self.tokenizer = tokenizer
-        self.text = dataframe['Prompt'].tolist()
+        self.text = dataframe['Tweet'].tolist()
         self.labels = dataframe['TweetAvgAnnotation'].tolist()
         self.max_length = max_length
 
