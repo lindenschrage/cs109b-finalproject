@@ -65,7 +65,7 @@ class TweetOptimismRegressor(PreTrainedModel):
 
     def __init__(self, config):
         super(TweetOptimismRegressor, self).__init__(config)
-        self.llama = LlamaModel.from_pretrained("meta-llama/Llama-2-7b-hf", token=access_token)
+        self.llama = LlamaModel.from_pretrained("meta-llama/Llama-2-7b-hf", output_hidden_states=True, token=access_token)
         self.linear = nn.Linear(config.hidden_size, 100)
         self.regressor = nn.Linear(100, 1)
         self.loss_fn = nn.MSELoss() if not hasattr(config, 'loss_fn') else config.loss_fn
@@ -77,7 +77,7 @@ class TweetOptimismRegressor(PreTrainedModel):
         if attention_mask is not None:
             kwargs['attention_mask'] = attention_mask
 
-        llama_output = self.llama(**kwargs).last_hidden_state[:, -1, :]
+        llama_output = self.llama(**kwargs).hidden_states[-1].mean(dim=1)
         x = self.linear(llama_output)
         logits = self.regressor(x).squeeze()
 
@@ -102,7 +102,7 @@ class TweetOptimismRegressor(PreTrainedModel):
       return {"logits": logits}
 '''
 def tokenize_texts(text_list):
-    return tokenizer(text_list, padding=True, truncation=True, return_tensors="pt")
+    return tokenizer(text_list, max_length=300,padding=True, truncation=True, return_tensors="pt")
 
 df['Tweet-tokens'] = df['Tweet'].apply(tokenize_texts)
 
