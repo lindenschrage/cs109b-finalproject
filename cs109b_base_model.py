@@ -22,16 +22,18 @@ df = pd.read_csv(url)
 from transformers import AutoTokenizer, AutoModel
 
 bert_tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
-bert_model = AutoModel.from_pretrained('distilbert-base-uncased', ).to('cuda')  
-def get_embedding(text):
-    wrapped_input = bert_tokenizer(text, add_special_tokens=True, truncation=True,
-                                   padding=True, max_length=300, return_tensors="pt").to('cuda')
-    with torch.no_grad():
-        output = bert_model(**wrapped_input)
-        last_hidden_state = output.last_hidden_state[:, 0, :] 
-    return last_hidden_state
+bert_model = AutoModel.from_pretrained('distilbert-base-uncased', output_hidden_layers=True).to('cuda')  
+inputs = bert_tokenizer(list(df['Tweet']), add_special_tokens=True, truncation=True, padding=True, return_tensors="pt").to('cuda')
 
-df['Tweet-tokens'] = df['Tweet'][:5].apply(get_embedding)
+with torch.no_grad():
+    outputs = bert_model(**inputs)
+    last = outputs.last_hidden_state[:, 0, :]
+    sec = outputs.hidden_states[-2][0][0].reshape(1, -1)
+    thr = outputs.hidden_states[-3][0][0].reshape(1, -1)
+    frth = outputs.hidden_states[-4][0][0].reshape(1, -1)  
+    embeddings = last + sec + thr + frth 
+
+df['Tweet-tokens'] = embeddings.cpu().numpy().tolist()
 
 top_layers = list(df['Tweet-tokens'])
 tweet_annotation = list(df['TweetAvgAnnotation'])
