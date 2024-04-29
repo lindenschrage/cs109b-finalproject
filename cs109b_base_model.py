@@ -76,11 +76,11 @@ opt = keras.optimizers.Adam(learning_rate=lr_schedule)
 class SentimentRegressionModel(keras.Model):
     def __init__(self):
         super(SentimentRegressionModel, self).__init__()
-        self.dense1 = keras.layers.Dense(500, activation='relu', kernel_regularizer=l2(0.1))  
+        self.dense1 = keras.layers.Dense(500, activation='relu', kernel_regularizer=l2(0.01))  
         #self.dropout1 = Dropout(0.5)
-        self.dense2 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.1)) 
+        self.dense2 = keras.layers.Dense(300, activation='relu', kernel_regularizer=l2(0.01)) 
         #self.dropout2 = Dropout(0.5)
-        self.dense3 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.1)) 
+        self.dense3 = keras.layers.Dense(150, activation='relu', kernel_regularizer=l2(0.01)) 
         #self.dropout3 = Dropout(0.5)
         self.dense4 = keras.layers.Dense(1, activation='linear')
 
@@ -94,7 +94,7 @@ class SentimentRegressionModel(keras.Model):
         outputs = self.dense4(x)
         return outputs
 lr_schedule = keras.optimizers.schedules.ExponentialDecay(
-    initial_learning_rate=1e-6,
+    initial_learning_rate=1e-5,
     decay_steps=20000,
     decay_rate=0.99)
 
@@ -147,5 +147,3 @@ def plot_mse(history, path):
 
 plot_mse(history,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/basemodel-mse.png')
 
-bert_model.compile(optimizer=opt, loss='mse', metrics=['mse'])
-history = bert_model.fit(X_train1, y_train1, validation_data=(X_test, y_test), epochs=30, batch_size=8)
