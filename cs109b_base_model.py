@@ -18,7 +18,7 @@ import pickle
 
 url = 'https://raw.githubusercontent.com/lindenschrage/cs109b-data/main/dataframe.csv'
 df = pd.read_csv(url)
-
+'''
 from transformers import AutoTokenizer, AutoModel
 
 bert_tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
@@ -36,17 +36,18 @@ with torch.no_grad():
 df['Tweet-tokens'] = embeddings.cpu().numpy().tolist()
 
 top_layers = list(df['Tweet-tokens'])
+'''
 tweet_annotation = list(df['TweetAvgAnnotation'])
 
 top_layer_pickle_path = '/n/home09/lschrage/projects/cs109b/top_layers_base.pkl'
-
+'''
 with open(top_layer_pickle_path, 'wb') as f:
     pickle.dump(top_layers, f)
-
+'''
 with open(top_layer_pickle_path, 'rb') as f:
     top_layers_loaded = pickle.load(f)
 
-top_layers_array = np.vstack(top_layers)
+top_layers_array = np.vstack(top_layers_loaded)
 scaler = StandardScaler()
 top_layers_scaled = scaler.fit_transform(top_layers_array)
 tweet_annotation_array = np.array(tweet_annotation)
