@@ -20,7 +20,7 @@ access_token = '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'
 
 base_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", token=access_token).to('cuda')
 
-tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llma-2-7b-hf", token=access_token, return_tensors = 'tf')
+tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=access_token, return_tensors = 'tf')
 tokenizer.pad_token_id = (0)
 tokenizer.padding_side = "left"
 
