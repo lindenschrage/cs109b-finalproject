@@ -22,7 +22,7 @@ df = pd.read_csv(url)
 from transformers import AutoTokenizer, AutoModel
 
 bert_tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
-bert_model = AutoModel.from_pretrained('distilbert-base-uncased', output_hidden_layers=True).to('cuda')  
+bert_model = AutoModel.from_pretrained('distilbert-base-uncased', output_hidden_states=True).to('cuda')  
 inputs = bert_tokenizer(list(df['Tweet']), add_special_tokens=True, truncation=True, padding=True, return_tensors="pt").to('cuda')
 
 with torch.no_grad():
