@@ -15,6 +15,7 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import pickle
 from transformers import LlamaForCausalLM, LlamaTokenizer
+'''
 
 access_token = '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'
 
@@ -23,12 +24,12 @@ base_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", token=
 tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=access_token, return_tensors = 'tf')
 tokenizer.pad_token_id = (0)
 tokenizer.padding_side = "left"
-
+'''
 #url = 'https://raw.githubusercontent.com/lindenschrage/cs109b-finalproject/main/dataframe.csv'
 url = '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/dataframe.csv'
 df = pd.read_csv(url)
 df.head()
-
+'''
 top_layers = []
 
 tweet_text = list(df['Tweet'])
@@ -37,16 +38,13 @@ with torch.no_grad():
       tokens = tokenizer(tweet, return_tensors='pt', padding=True).to('cuda')
       output = base_model(**tokens)
       sentence_embeddings = output.hidden_states[-1].mean(dim=1)
-      #last_hidden_state = output.last_hidden_state.mean(dim=1)
       top_layers.append(sentence_embeddings.cpu().detach().numpy())
-      #last_token_hidden_state = last_hidden_state[:, -1, :]
-      #top_layers.append(last_token_hidden_state.cpu().detach().numpy()) 
-
+'''
 top_layer_pickle_path = '/n/home09/lschrage/projects/cs109b/top_layers.pkl'
-
+'''
 with open(top_layer_pickle_path, 'wb') as f:
     pickle.dump(top_layers, f)
-
+'''
 with open(top_layer_pickle_path, 'rb') as f:
     top_layers_loaded = pickle.load(f)
 
@@ -118,7 +116,7 @@ history = model.fit(
     callbacks=[early_stopping_monitor]
 )
 history_df = pd.DataFrame(history.history)
-history_df.to_csv('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama_regression/history.csv', index=False)
+history_df.to_csv('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama_regression-history.csv', index=False)
 
 
 def plot_loss(history, path):
@@ -133,7 +131,7 @@ def plot_loss(history, path):
     plt.show()
     plt.savefig(path)
 
-plot_loss(history, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-regression/loss.png')
+plot_loss(history, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-regression-loss.png')
 
 def plot_mse(history, path):
     plt.figure(figsize=(10, 5))
@@ -147,4 +145,21 @@ def plot_mse(history, path):
     plt.show()
     plt.savefig(path)
 
-plot_mse(history,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-regression/mse.png')
+plot_mse(history,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-regression-mse.png')
+
+
+def plot_predictions_vs_actual(model, X_test, y_test, path):
+    y_pred = model.predict(X_test)  # Predict using the model
+    plt.figure(figsize=(10, 5))
+    plt.scatter(y_test, y_pred, alpha=0.5)  # Scatter plot of actual vs predicted
+    plt.plot([min(y_test), max(y_test)], [min(y_test), max(y_test)], 'r--')  # Line of equality
+    plt.title('Actual vs Predicted Sentiment Scores')
+    plt.xlabel('Actual Scores')
+    plt.ylabel('Predicted Scores')
+    plt.grid(True)
+    plt.show()
+    plt.savefig(path)
+
+# Call this function with your test data
+plot_predictions_vs_actual(model, X_test, y_test, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-regression-actual-vs-predicted.png')
+
