@@ -104,12 +104,6 @@ def label_value(x):
 df['Sentiment'] = df['TweetAvgAnnotation'].apply(label_value)
 '''
 
-
-url = 'https://raw.githubusercontent.com/lindenschrage/cs109b-finalproject/main/dataframe.csv'
-df = pd.read_csv(url)
-df.head()
-
-
 url = '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/dataframe.csv'
 df = pd.read_csv(url)
 df.head()
@@ -257,7 +251,6 @@ train_params = TrainingArguments(
     eval_steps=2000
 )
 
-# PEFT Parameters (unchanged, correct as it was)
 peft_parameters = LoraConfig(
     lora_alpha=16,
     lora_dropout=0.1,
@@ -266,16 +259,12 @@ peft_parameters = LoraConfig(
     task_type="CAUSAL_LM"
 )
 
-# Adjust the fine_tuning setup to use the datasets directly
 fine_tuning = SFTTrainer(
     model=llama_model,
-    train_dataset=train_dataset,  # Use the dataset directly
-    eval_dataset=val_dataset,     # Use the dataset directly
-    peft_config=peft_parameters,
+    train_dataset=train_dataset,  
+    eval_dataset=val_dataset,     
     tokenizer=llama_tokenizer,
-    args=train_params,
-    compute_metrics=compute_metrics
-)
+    args=train_params)
 
 # Start training
 fine_tuning.train()
