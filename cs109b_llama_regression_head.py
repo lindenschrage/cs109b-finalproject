@@ -18,7 +18,7 @@ from transformers import LlamaForCausalLM, LlamaTokenizer
 
 access_token = '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'
 
-base_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", token=access_token).to('cuda')
+base_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", token=access_token, output_hidden_states=True).to('cuda')
 
 tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=access_token, return_tensors = 'tf')
 tokenizer.pad_token_id = (0)
@@ -36,9 +36,9 @@ with torch.no_grad():
   for tweet in tweet_text:
       tokens = tokenizer(tweet, return_tensors='pt', padding=True).to('cuda')
       output = base_model(**tokens)
-      #sentence_embeddings = outputs.hidden_states[-1].mean(dim=1)
-      last_hidden_state = output.last_hidden_state.mean(dim=1)
-      top_layers.append(last_hidden_state.cpu().detach().numpy())
+      sentence_embeddings = output.hidden_states[-1].mean(dim=1)
+      #last_hidden_state = output.last_hidden_state.mean(dim=1)
+      top_layers.append(sentence_embeddings.cpu().detach().numpy())
       #last_token_hidden_state = last_hidden_state[:, -1, :]
       #top_layers.append(last_token_hidden_state.cpu().detach().numpy()) 
 
