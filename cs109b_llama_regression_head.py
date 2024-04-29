@@ -36,16 +36,9 @@ with torch.no_grad():
   for tweet in tweet_text:
       tokens = tokenizer(tweet, return_tensors='pt', padding=True).to('cuda')
       output = base_model(**tokens)
-      last_hidden_state = output.last_hidden_state
-weights_for_non_padding = tokens.attention_mask * torch.arange(start=1, end=last_hidden_state.shape[1] + 1).unsqueeze(0)
-sum_embeddings = torch.sum(last_hidden_state * weights_for_non_padding.unsqueeze(-1), dim=1)
-num_of_none_padding_tokens = torch.sum(weights_for_non_padding, dim=-1).unsqueeze(-1)
-sentence_embeddings = sum_embeddings / num_of_none_padding_tokens
-
-print(tokens.input_ids)
-print(weights_for_non_padding)
-print(num_of_none_padding_tokens)
-print(sentence_embeddings.shape)
+      #sentence_embeddings = outputs.hidden_states[-1].mean(dim=1)
+      last_hidden_state = output.last_hidden_state.mean(dim=1)
+      top_layers.append(last_hidden_state.cpu().detach().numpy())
       #last_token_hidden_state = last_hidden_state[:, -1, :]
       #top_layers.append(last_token_hidden_state.cpu().detach().numpy()) 
 
