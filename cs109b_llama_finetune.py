@@ -106,7 +106,7 @@ df['Sentiment'] = df['TweetAvgAnnotation'].apply(label_value)
 
 url = '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/dataframe.csv'
 df = pd.read_csv(url)
-df.head()
+print(df.head())
 
 y = df['TweetAvgAnnotation']
 X = df
@@ -132,10 +132,10 @@ def generate_test_prompt(tweet):
           [{tweet["Tweet"]}] =
           """.strip()
 
-X_train_full['Prompt'] = X_train_full.apply(generate_train_prompt, axis=1)
-X_train['Prompt'] = X_train.apply(generate_train_prompt, axis=1)
-X_test['Prompt'] = X_test.apply(generate_test_prompt, axis=1)
-X_val['Prompt'] = X_val.apply(generate_test_prompt, axis=1)
+X_train_full['Tweet'] = X_train_full.apply(generate_train_prompt, axis=1)
+X_train['Tweet'] = X_train.apply(generate_train_prompt, axis=1)
+X_test['Tweet'] = X_test.apply(generate_test_prompt, axis=1)
+X_val['Tweet'] = X_val.apply(generate_test_prompt, axis=1)
 
 X_train_full.to_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-X-train-full.pkl')
 X_train.to_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-X-train.pkl')
