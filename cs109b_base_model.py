@@ -31,7 +31,7 @@ def get_embedding(text):
     print('1')
     with torch.no_grad():
       output = bert_model(**wrapped_input)
-      last_hidden_state = output[0][:, 0, :]
+      last_hidden_state = output[0][0][0]
     return last_hidden_state
 
 df['Tweet-tokens'] = df['Tweet'].apply(get_embedding)
