@@ -27,10 +27,10 @@ inputs = bert_tokenizer(list(df['Tweet']), add_special_tokens=True, truncation=T
 
 with torch.no_grad():
     outputs = bert_model(**inputs)
-    last = outputs.last_hidden_state[:, 0, :]
-    sec = outputs.hidden_states[-2][0][0].reshape(1, -1)
-    thr = outputs.hidden_states[-3][0][0].reshape(1, -1)
-    frth = outputs.hidden_states[-4][0][0].reshape(1, -1)  
+    last = last_hidden_states[:, 0, :]  # taking  CLS token embeddings from the last layer
+    sec = hidden_states[-2][:, 0, :]    # 2nd to last layer
+    thr = hidden_states[-3][:, 0, :]    
+    frth = hidden_states[-4][:, 0, :] 
     embeddings = last + sec + thr + frth 
 
 df['Tweet-tokens'] = embeddings.cpu().numpy().tolist()
@@ -86,11 +86,11 @@ class SentimentRegressionModel(keras.Model):
 
     def call(self, inputs):
         x = self.dense1(inputs)
-        x = self.dropout1(x)
+        #x = self.dropout1(x)
         x = self.dense2(x)
-        x = self.dropout2(x) 
+        #x = self.dropout2(x) 
         x = self.dense3(x)
-        x = self.dropout3(x) 
+        #x = self.dropout3(x) 
         outputs = self.dense4(x)
         return outputs
 lr_schedule = keras.optimizers.schedules.ExponentialDecay(
@@ -99,7 +99,7 @@ lr_schedule = keras.optimizers.schedules.ExponentialDecay(
     decay_rate=0.99)
 
 early_stopping_monitor = EarlyStopping(
-    monitor='val_loss',
+    monitor='val_mse',
     patience=10,
     verbose=1,
     restore_best_weights=True
