@@ -182,6 +182,17 @@ llama_model = LlamaForCausalLM.from_pretrained(
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
 
+from peft import LoraConfig, get_peft_model 
+
+config = LoraConfig( r=16, 
+    lora_alpha=32, 
+    lora_dropout=0.05, 
+    bias="none",
+    task_type="CAUSAL_LM" 
+)
+
+model = get_peft_model(llama_model, config)
+
 llama_tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=access_token)
 llama_tokenizer.pad_token = llama_tokenizer.eos_token
 llama_tokenizer.padding_side = "right"
@@ -243,7 +254,7 @@ peft_parameters = LoraConfig(
 )
 
 fine_tuning = SFTTrainer(
-    model=llama_model,
+    model=model,
     train_dataset=train_dataset,
     eval_dataset=val_dataset,
     tokenizer=llama_tokenizer,
