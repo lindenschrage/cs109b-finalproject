@@ -42,7 +42,7 @@ from datasets import Dataset
 import wandb
 from sklearn.metrics import mean_squared_error
 from datasets import DatasetInfo, Features, Value
-
+from datasets import load_from_disk
 
 import os
 os.environ["WANDB_PROJECT"]="twitter-sentiment-analysis"
@@ -205,11 +205,11 @@ def tokenize_function(df):
 train_dataset = train_dataset.map(tokenize_function, batched=True)
 val_dataset = val_dataset.map(tokenize_function, batched=True)
 
-train_dataset.to_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset.pkl')
-val_dataset.to_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset.pkl')
+train_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
+val_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
 
-train_dataset = pd.read_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset.pkl')
-val_dataset = pd.read_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset.pkl')
+train_dataset = load_from_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
+val_dataset = load_from_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
 
 
 train_params = TrainingArguments(
