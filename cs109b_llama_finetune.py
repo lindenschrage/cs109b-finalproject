@@ -132,10 +132,10 @@ def generate_test_prompt(tweet):
           [{tweet["Tweet"]}] =
           """.strip()
 
-X_train_full['Tweet'] = X_train_full.apply(generate_train_prompt, axis=1)
-X_train['Tweet'] = X_train.apply(generate_train_prompt, axis=1)
-X_test['Tweet'] = X_test.apply(generate_test_prompt, axis=1)
-X_val['Tweet'] = X_val.apply(generate_test_prompt, axis=1)
+X_train_full['Prompt'] = X_train_full.apply(generate_train_prompt, axis=1)
+X_train['Prompt'] = X_train.apply(generate_train_prompt, axis=1)
+X_test['Prompt'] = X_test.apply(generate_test_prompt, axis=1)
+X_val['Prompt'] = X_val.apply(generate_test_prompt, axis=1)
 
 X_train_full.to_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-X-train-full.pkl')
 X_train.to_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-X-train.pkl')
@@ -184,12 +184,12 @@ llama_tokenizer.pad_token = llama_tokenizer.eos_token
 llama_tokenizer.padding_side = "right"
 
 df_train = pd.DataFrame({
-    "text": X_train['Tweet'],
+    "text": X_train['Prompt'],
     "labels": y_train
 })
 
 df_val = pd.DataFrame({
-    "text": X_val['Tweet'],
+    "text": X_val['Prompt'],
     "labels": y_val
 })
 
@@ -197,7 +197,7 @@ df_val = pd.DataFrame({
 class TweetDataset(Dataset):
     def __init__(self, dataframe, tokenizer, max_length=512):
         self.tokenizer = tokenizer
-        self.text = dataframe['Tweet'].tolist()
+        self.text = dataframe['Prompt'].tolist()
         self.labels = dataframe['TweetAvgAnnotation'].tolist()
         self.max_length = max_length
 
@@ -226,8 +226,8 @@ class TweetDataset(Dataset):
           'labels': torch.tensor(labels, dtype=torch.float)
         }
 
-train_dataset = TweetDataset(df_train, llama_tokenizer)
-val_dataset = TweetDataset(df_val, llama_tokenizer)
+train_dataset = TweetDataset(X_train, llama_tokenizer)
+val_dataset = TweetDataset(X_val, llama_tokenizer)
 
 train_params = TrainingArguments(
     output_dir="./results_modified",
