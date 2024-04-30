@@ -41,6 +41,8 @@ from trl import SFTTrainer
 from datasets import Dataset
 import wandb
 from sklearn.metrics import mean_squared_error
+from datasets import DatasetInfo, Features, Value
+
 
 import os
 os.environ["WANDB_PROJECT"]="twitter-sentiment-analysis"
@@ -193,7 +195,6 @@ df_val = pd.DataFrame({
     "labels": y_val
 })
 
-from datasets import DatasetInfo, Features, Value
 
 class TweetDataset(Dataset):
     def __init__(self, dataframe, tokenizer, max_length=512):
@@ -229,8 +230,8 @@ class TweetDataset(Dataset):
             'labels': torch.tensor(labels, dtype=torch.float)
         }
 
-train_dataset = TweetDataset(X_train, llama_tokenizer)
-val_dataset = TweetDataset(X_val, llama_tokenizer)
+train_dataset = TweetDataset(df_train, llama_tokenizer)
+val_dataset = TweetDataset(df_val, llama_tokenizer)
 
 train_params = TrainingArguments(
     output_dir="./results_modified",
