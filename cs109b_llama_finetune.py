@@ -193,13 +193,19 @@ df_val = pd.DataFrame({
     "labels": y_val
 })
 
-# Define the dataset class
+from datasets import DatasetInfo, Features, Value
+
 class TweetDataset(Dataset):
     def __init__(self, dataframe, tokenizer, max_length=512):
         self.tokenizer = tokenizer
-        self.text = dataframe['Prompt'].tolist()
-        self.labels = dataframe['TweetAvgAnnotation'].tolist()
+        self.text = dataframe['text'].tolist()
+        self.labels = dataframe['labels'].tolist()
         self.max_length = max_length
+        self._info = DatasetInfo(features=Features({
+            'input_ids': Value('int32'),
+            'attention_mask': Value('int32'),
+            'labels': Value('float32'),
+        }))
 
     def __len__(self):
         return len(self.text)
@@ -207,23 +213,20 @@ class TweetDataset(Dataset):
     def __getitem__(self, idx):
         text = str(self.text[idx])
         labels = float(self.labels[idx])
-        
-        # Tokenizing the text
         encoding = self.tokenizer.encode_plus(
-          text,
-          add_special_tokens=True,
-          max_length=self.max_length,
-          return_token_type_ids=False,
-          padding='max_length',
-          return_attention_mask=True,
-          return_tensors='pt',
-          truncation=True
+            text,
+            add_special_tokens=True,
+            max_length=self.max_length,
+            return_token_type_ids=False,
+            padding='max_length',
+            return_attention_mask=True,
+            return_tensors='pt',
+            truncation=True
         )
-
         return {
-          'input_ids': encoding['input_ids'].flatten(),
-          'attention_mask': encoding['attention_mask'].flatten(),
-          'labels': torch.tensor(labels, dtype=torch.float)
+            'input_ids': encoding['input_ids'].flatten(),
+            'attention_mask': encoding['attention_mask'].flatten(),
+            'labels': torch.tensor(labels, dtype=torch.float)
         }
 
 train_dataset = TweetDataset(X_train, llama_tokenizer)
