@@ -248,6 +248,7 @@ fine_tuning = SFTTrainer(
     eval_dataset=val_dataset,
     tokenizer=llama_tokenizer,
     args=train_params,
+    dataset_text_field = 'text'
 )
 
 # Start training
