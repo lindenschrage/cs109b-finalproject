@@ -196,43 +196,21 @@ df_val = pd.DataFrame({
     "labels": y_val
 })
 
+train_dataset = Dataset.from_pandas(df_train)
+val_dataset = Dataset.from_pandas(df_val)
 
-class TweetDataset(Dataset):
-    def __init__(self, dataframe, tokenizer, max_length=512):
-        self.tokenizer = tokenizer
-        self.text = dataframe['text'].tolist()
-        self.labels = dataframe['labels'].tolist()
-        self.max_length = max_length
-        self._info = DatasetInfo(features=Features({
-            'input_ids': Value('int32'),
-            'attention_mask': Value('int32'),
-            'labels': Value('float32'),
-        }))
+def tokenize_function(df):
+    return llama_tokenizer(df["text"], padding="max_length", truncation=True, max_length=512)
 
-    def __len__(self):
-        return len(self.text)
+train_dataset = train_dataset.map(tokenize_function, batched=True)
+val_dataset = val_dataset.map(tokenize_function, batched=True)
 
-    def __getitem__(self, idx):
-        text = str(self.text[idx])
-        labels = float(self.labels[idx])
-        encoding = self.tokenizer.encode_plus(
-            text,
-            add_special_tokens=True,
-            max_length=self.max_length,
-            return_token_type_ids=False,
-            padding='max_length',
-            return_attention_mask=True,
-            return_tensors='pt',
-            truncation=True
-        )
-        return {
-            'input_ids': encoding['input_ids'].flatten(),
-            'attention_mask': encoding['attention_mask'].flatten(),
-            'labels': torch.tensor(labels, dtype=torch.float)
-        }
+train_dataset.to_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset.pkl')
+val_dataset.to_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset.pkl')
 
-train_dataset = TweetDataset(df_train, llama_tokenizer)
-val_dataset = TweetDataset(df_val, llama_tokenizer)
+train_dataset = pd.read_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset.pkl')
+val_dataset = pd.read_pickle('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset.pkl')
+
 
 train_params = TrainingArguments(
     output_dir="./results_modified",
@@ -270,7 +248,6 @@ fine_tuning = SFTTrainer(
     eval_dataset=val_dataset,
     tokenizer=llama_tokenizer,
     args=train_params,
-    dataset_text_field="text"
 )
 
 # Start training
