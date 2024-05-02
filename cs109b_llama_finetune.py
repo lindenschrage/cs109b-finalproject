@@ -44,6 +44,8 @@ from sklearn.metrics import mean_squared_error
 from datasets import DatasetInfo, Features, Value
 from datasets import load_from_disk
 import accelerate
+from peft import LoraConfig, get_peft_model 
+
 
 import os
 os.environ["WANDB_PROJECT"]="twitter-sentiment-analysis"
@@ -182,7 +184,6 @@ llama_model = LlamaForCausalLM.from_pretrained(
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
 
-from peft import LoraConfig, get_peft_model 
 
 config = LoraConfig( r=16, 
     lora_alpha=32, 
@@ -191,6 +192,7 @@ config = LoraConfig( r=16,
     task_type="CAUSAL_LM" 
 )
 
+llama_model.gradient_checkpointing_enable()
 model = get_peft_model(llama_model, config)
 
 llama_tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=access_token)
@@ -231,7 +233,7 @@ train_params = TrainingArguments(
     optim="paged_adamw_32bit",
     save_steps=25,
     logging_steps=1,
-    learning_rate=1e-6,
+    learning_rate=1e-5,
     weight_decay=0.001,
     fp16=False,
     bf16=False,
@@ -243,14 +245,6 @@ train_params = TrainingArguments(
     report_to="wandb",
     evaluation_strategy="steps",
     eval_steps=2000
-)
-
-peft_parameters = LoraConfig(
-    lora_alpha=16,
-    lora_dropout=0.1,
-    r=8,
-    bias="none",
-    task_type="CAUSAL_LM"
 )
 
 fine_tuning = SFTTrainer(
