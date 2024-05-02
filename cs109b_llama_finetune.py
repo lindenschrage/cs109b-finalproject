@@ -192,7 +192,6 @@ config = LoraConfig( r=16,
     task_type="CAUSAL_LM" 
 )
 
-llama_model.gradient_checkpointing_enable()
 model = get_peft_model(llama_model, config)
 
 llama_tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=access_token)
