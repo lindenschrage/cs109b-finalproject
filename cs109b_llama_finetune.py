@@ -184,7 +184,6 @@ llama_model = LlamaForCausalLM.from_pretrained(
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
 
-
 config = LoraConfig( r=16, 
     lora_alpha=32, 
     lora_dropout=0.05, 
@@ -232,7 +231,7 @@ train_params = TrainingArguments(
     optim="paged_adamw_32bit",
     save_steps=25,
     logging_steps=1,
-    learning_rate=1e-5,
+    learning_rate=1e-6,
     weight_decay=0.001,
     fp16=False,
     bf16=False,
