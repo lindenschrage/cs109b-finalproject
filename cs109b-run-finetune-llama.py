@@ -1,11 +1,33 @@
 
 ## Evaluate model once we have finetuned it
 
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from sklearn.metrics import accuracy_score, classification_report
 import torch
-from datasets import Dataset
+from torch.utils.data import Dataset, DataLoader
+import pandas as pd
+from transformers import AutoTokenizer
 
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import re
+import bitsandbytes as bnb
+from sklearn.model_selection import train_test_split
+import torch
+import transformers
+from transformers import LlamaTokenizer, LlamaForCausalLM, BitsAndBytesConfig, pipeline
+import torch.nn.functional as F
+import accelerate
+import sklearn
+import peft
+from peft import prepare_model_for_kbit_training
+from peft import LoraConfig, get_peft_model
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, HfArgumentParser, TrainingArguments, pipeline
+from trl import SFTTrainer
+from datasets import Dataset
+import wandb
+from sklearn.metrics import mean_squared_error
+from datasets import DatasetInfo, Features, Value
+from datasets import load_from_disk
 
 model_path = '/n/home09/lschrage/projects/cs109b/finetuned_model'
 model = AutoModelForCausalLM.from_pretrained(model_path)

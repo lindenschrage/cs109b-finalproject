@@ -224,14 +224,14 @@ val_dataset = load_from_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalpro
 
 
 train_params = TrainingArguments(
-    output_dir="./results_modified",
+    output_dir="/n/home09/lschrage/projects/cs109b/cs109b-finalproject/resultsfinetunemodel",
     num_train_epochs=2,
     per_device_train_batch_size=4,
     gradient_accumulation_steps=4,
     optim="paged_adamw_32bit",
     save_steps=25,
     logging_steps=1,
-    learning_rate=1e-5,
+    learning_rate=1e-6,
     weight_decay=0.001,
     fp16=False,
     bf16=False,
@@ -244,7 +244,7 @@ train_params = TrainingArguments(
     evaluation_strategy="steps",
     eval_steps=2000
 )
-
+'''
 peft_parameters = LoraConfig(
     lora_alpha=16,
     lora_dropout=0.1,
@@ -252,9 +252,9 @@ peft_parameters = LoraConfig(
     bias="none",
     task_type="CAUSAL_LM"
 )
-
+'''
 fine_tuning = SFTTrainer(
-    model=model,
+    model=llama_model,
     train_dataset=train_dataset,
     eval_dataset=val_dataset,
     tokenizer=llama_tokenizer,
