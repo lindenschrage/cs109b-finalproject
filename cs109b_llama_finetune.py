@@ -244,7 +244,7 @@ train_params = TrainingArguments(
     evaluation_strategy="steps",
     eval_steps=2000
 )
-'''
+
 peft_parameters = LoraConfig(
     lora_alpha=16,
     lora_dropout=0.1,
@@ -252,9 +252,9 @@ peft_parameters = LoraConfig(
     bias="none",
     task_type="CAUSAL_LM"
 )
-'''
+
 fine_tuning = SFTTrainer(
-    model=llama_model,
+    model=model,
     train_dataset=train_dataset,
     eval_dataset=val_dataset,
     tokenizer=llama_tokenizer,
