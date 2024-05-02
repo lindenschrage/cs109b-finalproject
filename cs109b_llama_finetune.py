@@ -43,6 +43,7 @@ import wandb
 from sklearn.metrics import mean_squared_error
 from datasets import DatasetInfo, Features, Value
 from datasets import load_from_disk
+import accelerate
 
 import os
 os.environ["WANDB_PROJECT"]="twitter-sentiment-analysis"
@@ -171,7 +172,6 @@ bnb_config = BitsAndBytesConfig(
         bnb_4bit_quant_type="nf4",
         bnb_4bit_compute_dtype=torch.bfloat16,
 )
-
 
 llama_model = LlamaForCausalLM.from_pretrained(
     "meta-llama/Llama-2-7b-hf",
