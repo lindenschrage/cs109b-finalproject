@@ -41,8 +41,14 @@ import torch
 from transformers.file_utils import ModelOutput
 from dataclasses import dataclass
 import torch
+# importing os module for environment variables
+import os
+# importing necessary functions from dotenv library
+from dotenv import load_dotenv, dotenv_values 
+# loading variables from .env file
+load_dotenv() 
 
-access_token = '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'
+access_token = os.getenv("ACCESS_TOKEN")
 
 tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf')
 tokenizer.pad_token = tokenizer.eos_token
