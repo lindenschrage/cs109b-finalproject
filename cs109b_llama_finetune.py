@@ -131,7 +131,7 @@ X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, te
 def generate_train_prompt(tweet):
   return f"""
           Analyze the sentiment of the tweet enclosed in square brackets,
-          determine if it is positive, neutral, or negative, and return the answer as a float value rounded to two decimal places
+          determine if it is optimistic, neutral, or pessamistic, and return the answer as a float value rounded to two decimal places
           between -3 (corresponding to a  negative sentiment) and 3 (corresponding to a positive sentiment).
 
           [{tweet["Tweet"]}] = {tweet["TweetAvgAnnotation"]}
