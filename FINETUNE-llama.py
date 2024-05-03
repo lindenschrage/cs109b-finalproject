@@ -139,7 +139,6 @@ train_params = TrainingArguments(
     num_train_epochs=2,
     per_device_train_batch_size=4,
     gradient_accumulation_steps=2,
-    optim="adamw_hf",
     save_steps=25,
     logging_steps=1,
     learning_rate=1e-5,
