@@ -50,6 +50,14 @@ from peft import LoraConfig, get_peft_model
 import os
 os.environ["WANDB_PROJECT"]="twitter-sentiment-analysis"
 
+# importing os module for environment variables
+import os
+# importing necessary functions from dotenv library
+from dotenv import load_dotenv, dotenv_values 
+# loading variables from .env file
+load_dotenv() 
+
+
 
 ## DATA PREPROCESSING
 '''
@@ -165,7 +173,7 @@ X_val['Random'] = np.round(np.random.uniform(-3, 3, size=len(X_val)), 2)
 y_random = list(X_val['Random'])
 '''
 
-access_token = "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"
+access_token = os.getenv("ACCESS_TOKEN")
 model = "meta-llama/Llama-2-7b-hf"
 
 bnb_config = BitsAndBytesConfig(
