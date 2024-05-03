@@ -90,17 +90,15 @@ def extract_sentiment(prediction_text):
     # optionally followed by a decimal point and more digits (the pattern for a floating point number).
     match = re.search(r'=\s*(-?\d+(?:\.\d+)?)', prediction_text)
     if match:
-        # If a match is found, convert it to float and return
         return float(match.group(1))
     else:
-        # If no valid number is found, return 0.0
         return 0.0
     
 
 import torch
 from sklearn.metrics import mean_squared_error
 
-model.eval()  # Set the model to evaluation mode
+model.eval()  
 predictions = []
 true_labels = []
 
@@ -115,8 +113,8 @@ with torch.no_grad():
         predictions.extend(sentiments)
         true_labels.extend(batch['labels'].numpy())  # Assuming labels are in a tensor format
 
-# Ensure predictions and true_labels are the same length and corresponding elements match
-assert len(predictions) == len(true_labels)
+print("true", true_labels)
+print("pred", predictions)
 
 mse = mean_squared_error(true_labels, predictions)
 print(f"Mean Squared Error: {mse}")
