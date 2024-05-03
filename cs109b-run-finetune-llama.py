@@ -83,10 +83,12 @@ val_dataset = Dataset.from_pandas(df_val)
 val_loader = DataLoader(val_dataset, batch_size=8)
 '''
 test_dataset = load_from_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-test-dataset')
+val_dataset = load_from_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
 
 from torch.utils.data import DataLoader
 
 test_loader = DataLoader(test_dataset, batch_size=8, shuffle=False)
+val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False)
 
 
 import re
@@ -131,7 +133,8 @@ def evaluate_model(dataloader):
     return mse
 
 # Calculate MSE for validation and test sets
-val_mse = evaluate_model(val_loader)
 test_mse = evaluate_model(test_loader)
+val_mse = evaluate_model(val_loader)
+
 print(f'Validation MSE: {val_mse}')
 print(f'Test MSE: {test_mse}')

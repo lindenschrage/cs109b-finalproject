@@ -134,11 +134,6 @@ train_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproje
 val_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
 test_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-test-dataset')
 
-train_dataset = load_from_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
-val_dataset = load_from_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
-test_dataset = load_from_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-test-dataset')
-
-
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/cs109b-finalproject/resultsfinetunemodel",
     num_train_epochs=2,
