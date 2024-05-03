@@ -32,8 +32,8 @@ from datasets import load_from_disk
 from transformers import LlamaForCausalLM, LlamaTokenizer
 
 # Load the model
-model = LlamaForCausalLM.from_pretrained('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/saved_model')
-tokenizer = LlamaTokenizer.from_pretrained(model_path)
+model = LlamaForCausalLM.from_pretrained('/n/home09/lschrage/projects/cs109b/finetuned_model')
+tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=ACCESS_TOKEN, return_tensors = 'tf')
 
 url = '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/dataframe.csv'
 df = pd.read_csv(url)
