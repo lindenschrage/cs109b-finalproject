@@ -14,38 +14,14 @@ from torch.optim import Adam
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import pickle
-from transformers import LlamaForCausalLM, LlamaTokenizer
+from embedding_data import get_llama_embeddings
+from plot_functions import plot_loss, plot_mse, plot_predictions_vs_actual
 
-
-access_token = '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'
-
-base_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", token=access_token, output_hidden_states=True).to('cuda')
-
-tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=access_token, return_tensors = 'tf')
-tokenizer.pad_token_id = (0)
-tokenizer.padding_side = "left"
-
-#url = 'https://raw.githubusercontent.com/lindenschrage/cs109b-finalproject/main/dataframe.csv'
 url = '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/dataframe.csv'
 df = pd.read_csv(url)
-df.head()
 
-top_layers = []
-
-tweet_text = list(df['Tweet'])
-with torch.no_grad():
-  for tweet in tweet_text:
-      tokens = tokenizer(tweet, return_tensors='pt', padding=True).to('cuda')
-      output = base_model(**tokens)
-      sentence_embeddings = output.hidden_states[-1].mean(dim=1)
-      top_layers.append(sentence_embeddings.cpu().detach().numpy())
-
-top_layer_pickle_path = '/n/home09/lschrage/projects/cs109b/LLAMA_embeddings.pkl'
-
-with open(top_layer_pickle_path, 'wb') as f:
-    pickle.dump(top_layers, f)
-
-with open(top_layer_pickle_path, 'rb') as f:
+get_llama_embeddings(df, '/n/home09/lschrage/projects/cs109b/LLAMA_embeddings.pkl')
+with open('/n/home09/lschrage/projects/cs109b/LLAMA_embeddings.pkl', 'rb') as f:
     top_layers_loaded = pickle.load(f)
 
 tweet_annotation = list(df['TweetAvgAnnotation'])
@@ -71,7 +47,6 @@ class SentimentRegressionModel(keras.Model):
         outputs = self.dense4(x)
         return outputs
     
-
 top_layers_array = np.vstack(top_layers_loaded)
 scaler = StandardScaler()
 top_layers_scaled = scaler.fit_transform(top_layers_array)
@@ -104,7 +79,6 @@ early_stopping_monitor = EarlyStopping(
     restore_best_weights=True
 )
 
-
 opt = keras.optimizers.Adam(learning_rate=lr_schedule)
 model = SentimentRegressionModel()
 model.compile(optimizer=opt, loss='mse', metrics=['mse'])
@@ -119,46 +93,9 @@ history_df = pd.DataFrame(history.history)
 history_df.to_csv('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama_regression-history.csv', index=False)
 
 
-def plot_loss(history, path):
-    plt.figure(figsize=(10, 5))
-    plt.plot(history.history['loss'], label='Training Loss')
-    plt.plot(history.history['val_loss'], label='Validation Loss')
-    plt.title('Training and Validation Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-    plt.savefig(path)
+plot_loss(history, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/LLAMA-regression-loss.png')
 
-plot_loss(history, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-regression-loss.png')
+plot_mse(history,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/LLAMA-regression-mse.png')
 
-def plot_mse(history, path):
-    plt.figure(figsize=(10, 5))
-    plt.plot(history.history['mse'], label='Training MSE')
-    plt.plot(history.history['val_mse'], label='Validation MSE')
-    plt.title('Training and Validation MSE')
-    plt.xlabel('Epochs')
-    plt.ylabel('MSE')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-    plt.savefig(path)
-
-plot_mse(history,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-regression-mse.png')
-
-
-def plot_predictions_vs_actual(model, X_test, y_test, path):
-    y_pred = model.predict(X_test)  
-    plt.figure(figsize=(10, 5))
-    plt.scatter(y_test, y_pred, alpha=0.5) 
-    plt.plot([min(y_test), max(y_test)], [min(y_test), max(y_test)], 'r--') 
-    plt.title('Actual vs Predicted Sentiment Scores')
-    plt.xlabel('Actual Scores')
-    plt.ylabel('Predicted Scores')
-    plt.grid(True)
-    plt.show()
-    plt.savefig(path)
-
-plot_predictions_vs_actual(model, X_test, y_test, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-regression-actual-vs-predicted.png')
+plot_predictions_vs_actual(model, X_test, y_test, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/LLAMA-regression-actual-vs-predicted.png')
 

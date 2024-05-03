@@ -13,39 +13,18 @@ import torch
 from sklearn.model_selection import train_test_split
 from torch.optim import Adam
 from sklearn.preprocessing import StandardScaler
-import matplotlib.pyplot as plt
 import pickle
+from embedding_data import get_bert_embeddings
+from plot_functions import plot_loss, plot_mse, plot_predictions_vs_actual
 
-url = 'https://raw.githubusercontent.com/lindenschrage/cs109b-data/main/dataframe.csv'
+url = '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/dataframe.csv'
 df = pd.read_csv(url)
-'''
-from transformers import AutoTokenizer, AutoModel
-
-bert_tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
-bert_model = AutoModel.from_pretrained('distilbert-base-uncased', output_hidden_states=True).to('cuda')  
-inputs = bert_tokenizer(list(df['Tweet']), add_special_tokens=True, truncation=True, padding=True, return_tensors="pt").to('cuda')
-
-with torch.no_grad():
-    outputs = bert_model(**inputs)
-    last = last_hidden_states[:, 0, :]  # taking  CLS token embeddings from the last layer
-    sec = hidden_states[-2][:, 0, :]    # 2nd to last layer
-    thr = hidden_states[-3][:, 0, :]    
-    frth = hidden_states[-4][:, 0, :] 
-    embeddings = last + sec + thr + frth 
-
-df['Tweet-tokens'] = embeddings.cpu().numpy().tolist()
-
-top_layers = list(df['Tweet-tokens'])
-'''
 
 tweet_annotation = list(df['TweetAvgAnnotation'])
 
-top_layer_pickle_path = '/n/home09/lschrage/projects/cs109b/top_layers_base.pkl'
-'''
-with open(top_layer_pickle_path, 'wb') as f:
-    pickle.dump(top_layers, f)
-'''
-with open(top_layer_pickle_path, 'rb') as f:
+get_bert_embeddings(df, '/n/home09/lschrage/projects/cs109b/BERT_embeddings.pkl')
+
+with open('/n/home09/lschrage/projects/cs109b/top_layers_base.pkl', 'rb') as f:
     top_layers_loaded = pickle.load(f)
 
 top_layers_array = np.vstack(top_layers_loaded)
@@ -116,50 +95,10 @@ history = model.fit(
     batch_size=8,
     callbacks=[early_stopping_monitor]
 )
-history_df = pd.DataFrame(history.history)
-history_df.to_csv('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/basemodel-history.csv', index=False)
 
+plot_loss(history, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/BERT-loss.png')
 
-def plot_loss(history, path):
-    plt.figure(figsize=(10, 5))
-    plt.plot(history.history['loss'], label='Training Loss')
-    plt.plot(history.history['val_loss'], label='Validation Loss')
-    plt.title('Training and Validation Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-    plt.savefig(path)
-
-plot_loss(history, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/basemodel-loss.png')
-
-def plot_mse(history, path):
-    plt.figure(figsize=(10, 5))
-    plt.plot(history.history['mse'], label='Training MSE')
-    plt.plot(history.history['val_mse'], label='Validation MSE')
-    plt.title('Training and Validation MSE')
-    plt.xlabel('Epochs')
-    plt.ylabel('MSE')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-    plt.savefig(path)
-
-plot_mse(history,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/basemodel-mse.png')
-
-
-def plot_predictions_vs_actual(model, X_test, y_test, path):
-    y_pred = model.predict(X_test)  
-    plt.figure(figsize=(10, 5))
-    plt.scatter(y_test, y_pred, alpha=0.5) 
-    plt.plot([min(y_test), max(y_test)], [min(y_test), max(y_test)], 'r--') 
-    plt.title('Actual vs Predicted Sentiment Scores')
-    plt.xlabel('Actual Scores')
-    plt.ylabel('Predicted Scores')
-    plt.grid(True)
-    plt.show()
-    plt.savefig(path)
+plot_mse(history,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/BERT-mse.png')
 
 plot_predictions_vs_actual(model, X_test, y_test, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/basemodel-actual-vs-predicted.png')
 

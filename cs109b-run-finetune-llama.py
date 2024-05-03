@@ -29,9 +29,11 @@ from sklearn.metrics import mean_squared_error
 from datasets import DatasetInfo, Features, Value
 from datasets import load_from_disk
 
-model_path = '/n/home09/lschrage/projects/cs109b/finetuned_model'
-model = AutoModelForCausalLM.from_pretrained(model_path)
-tokenizer = AutoTokenizer.from_pretrained(model_path)
+from transformers import LlamaForCausalLM, LlamaTokenizer
+
+# Load the model
+model = LlamaForCausalLM.from_pretrained('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/saved_model')
+tokenizer = LlamaTokenizer.from_pretrained(model_path)
 
 url = '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/dataframe.csv'
 df = pd.read_csv(url)
@@ -73,23 +75,43 @@ df_val = pd.DataFrame({
 
 val_dataset = Dataset.from_pandas(df_val)
 
-def evaluate_model(model, tokenizer, dataset):
-    model.eval()
-    predictions, true_labels = [], []
+val_loader = DataLoader(val_dataset, batch_size=8)
 
-    for _, row in dataset.iterrows():
-        inputs = tokenizer(row['text'], return_tensors='pt')
-        with torch.no_grad():
-            outputs = model(**inputs)
-        logits = outputs.logits
-        predicted_label = logits.argmax(-1).item()
-        predictions.append(predicted_label)
-        true_labels.append(row['labels'])
+import re
 
-    accuracy = accuracy_score(true_labels, predictions)
-    report = classification_report(true_labels, predictions, target_names=['Negative', 'Neutral', 'Positive'])
-    print("Accuracy:", accuracy)
-    print("Classification Report:\n", report)
+def extract_sentiment(prediction_text):
+    # Regex to find the pattern '= <optional space> <number>'
+    # It looks specifically for an optional negative sign, followed by one or more digits,
+    # optionally followed by a decimal point and more digits (the pattern for a floating point number).
+    match = re.search(r'=\s*(-?\d+(?:\.\d+)?)', prediction_text)
+    if match:
+        # If a match is found, convert it to float and return
+        return float(match.group(1))
+    else:
+        # If no valid number is found, return 0.0
+        return 0.0
+    
 
-# Use the function
-evaluate_model(model, tokenizer, val_dataset.to_pandas())
+import torch
+from sklearn.metrics import mean_squared_error
+
+model.eval()  # Set the model to evaluation mode
+predictions = []
+true_labels = []
+
+with torch.no_grad():
+    for batch in val_loader:
+        # Generate predictions
+        outputs = model.generate(batch['input_ids'], attention_mask=batch['attention_mask'])
+        prediction_texts = [tokenizer.decode(output, skip_special_tokens=True) for output in outputs]
+        sentiments = [extract_sentiment(text) for text in prediction_texts]
+        
+        # Collect predictions and actual labels
+        predictions.extend(sentiments)
+        true_labels.extend(batch['labels'].numpy())  # Assuming labels are in a tensor format
+
+# Ensure predictions and true_labels are the same length and corresponding elements match
+assert len(predictions) == len(true_labels)
+
+mse = mean_squared_error(true_labels, predictions)
+print(f"Mean Squared Error: {mse}")
