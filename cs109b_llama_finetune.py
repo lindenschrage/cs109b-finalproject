@@ -32,7 +32,7 @@ import os
 from dotenv import load_dotenv, dotenv_values 
 load_dotenv() 
 
-os.environ["WANDB_PROJECT"]="twitter-sentiment-analysis"
+#os.environ["WANDB_PROJECT"]="twitter-sentiment-analysis"
 
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 
@@ -151,7 +151,7 @@ train_params = TrainingArguments(
     warmup_ratio=0.1,
     group_by_length=True,
     lr_scheduler_type="linear",
-    report_to="wandb",
+    #report_to="wandb",
     evaluation_strategy="steps",
     eval_steps=2000
 )
