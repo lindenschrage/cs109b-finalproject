@@ -82,8 +82,12 @@ val_dataset = Dataset.from_pandas(df_val)
 
 val_loader = DataLoader(val_dataset, batch_size=8)
 '''
-val_dataset = load_from_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
-val_loader = DataLoader(val_dataset, batch_size=8)
+test_dataset = load_from_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-test-dataset')
+
+from torch.utils.data import DataLoader
+
+test_loader = DataLoader(test_dataset, batch_size=8, shuffle=False)
+
 
 import re
 
@@ -97,27 +101,37 @@ def extract_sentiment(prediction_text):
     else:
         return 0.0
     
-
 import torch
 from sklearn.metrics import mean_squared_error
 
-model.eval()  
-predictions = []
-true_labels = []
+def evaluate_model(dataloader):
+    model.eval()  # Ensure model is in evaluation mode
+    predictions = []
+    true_labels = []
 
-with torch.no_grad():
-    for batch in val_loader:
-        # Generate predictions
-        outputs = model.generate(batch['text'], attention_mask=batch['attention_mask'])
-        prediction_texts = [tokenizer.decode(output, skip_special_tokens=True) for output in outputs]
-        sentiments = [extract_sentiment(text) for text in prediction_texts]
-        
-        # Collect predictions and actual labels
-        predictions.extend(sentiments)
-        true_labels.extend(batch['labels'].numpy())  # Assuming labels are in a tensor format
+    with torch.no_grad():
+        for batch in dataloader:
+            # Ensure data is on the correct device
+            input_ids = batch['input_ids'].to(model.device)
+            attention_mask = batch['attention_mask'].to(model.device)
 
-print("true", true_labels)
-print("pred", predictions)
+            # Generate outputs
+            outputs = model.generate(input_ids=input_ids, attention_mask=attention_mask)
 
-mse = mean_squared_error(true_labels, predictions)
-print(f"Mean Squared Error: {mse}")
+            # Decode generated ids to text and extract sentiment
+            prediction_texts = [tokenizer.decode(generated_id, skip_special_tokens=True) for generated_id in outputs]
+            sentiments = [extract_sentiment(text) for text in prediction_texts]
+            
+            # Append results
+            predictions.extend(sentiments)
+            true_labels.extend(batch['labels'].tolist())
+
+    # Calculate Mean Squared Error
+    mse = mean_squared_error(true_labels, predictions)
+    return mse
+
+# Calculate MSE for validation and test sets
+val_mse = evaluate_model(val_loader)
+test_mse = evaluate_model(test_loader)
+print(f'Validation MSE: {val_mse}')
+print(f'Test MSE: {test_mse}')

@@ -101,29 +101,42 @@ llama_tokenizer.pad_token = llama_tokenizer.eos_token
 llama_tokenizer.padding_side = "right"
 
 df_train = pd.DataFrame({
-    "text": X_train['Prompt'],
+    "input_ids": X_train['Prompt'],
     "labels": y_train
 })
 
 df_val = pd.DataFrame({
-    "text": X_val['Prompt'],
+    "input_ids": X_val['Prompt'],
     "labels": y_val
+})
+
+df_test = pd.DataFrame({
+    "input_ids": X_test['Prompt'],
+    "labels": y_test
 })
 
 train_dataset = Dataset.from_pandas(df_train)
 val_dataset = Dataset.from_pandas(df_val)
+test_dataset = Dataset.from_pandas(df_test)
 
 def tokenize_function(df):
     return llama_tokenizer(df["text"], padding="max_length", truncation=True, max_length=512)
 
 train_dataset = train_dataset.map(tokenize_function, batched=True)
 val_dataset = val_dataset.map(tokenize_function, batched=True)
+test_dataset = test_dataset.map(tokenize_function, batched=True)
+
+train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
+val_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
+test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
 train_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
 val_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
+test_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-test-dataset')
 
 train_dataset = load_from_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
 val_dataset = load_from_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
+test_dataset = load_from_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-test-dataset')
 
 
 train_params = TrainingArguments(
@@ -154,7 +167,7 @@ fine_tuning = SFTTrainer(
     eval_dataset=val_dataset,
     tokenizer=llama_tokenizer,
     args=train_params,
-    dataset_text_field = 'text'
+    dataset_text_field = 'input_ids'
 )
 
 fine_tuning.train()
