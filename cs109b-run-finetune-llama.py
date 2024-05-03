@@ -28,8 +28,13 @@ import wandb
 from sklearn.metrics import mean_squared_error
 from datasets import DatasetInfo, Features, Value
 from datasets import load_from_disk
-
 from transformers import LlamaForCausalLM, LlamaTokenizer
+import os
+from dotenv import load_dotenv, dotenv_values 
+load_dotenv() 
+
+ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
+
 
 # Load the model
 model = LlamaForCausalLM.from_pretrained('/n/home09/lschrage/projects/cs109b/finetuned_model')
