@@ -22,7 +22,7 @@ from peft import LoraConfig, get_peft_model
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, HfArgumentParser, TrainingArguments, pipeline
 from trl import SFTTrainer
 from datasets import Dataset
-import wandb
+#import wandb
 from sklearn.metrics import mean_squared_error
 from datasets import DatasetInfo, Features, Value
 from datasets import load_from_disk
