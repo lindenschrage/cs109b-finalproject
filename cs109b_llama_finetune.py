@@ -36,7 +36,7 @@ os.environ["WANDB_PROJECT"]="twitter-sentiment-analysis"
 
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 
-url = '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/dataframe.csv'
+url = 'dataframe.csv'
 df = pd.read_csv(url)
 print(df.head())
 
@@ -120,7 +120,7 @@ val_dataset = Dataset.from_pandas(df_val)
 test_dataset = Dataset.from_pandas(df_test)
 
 def tokenize_function(df):
-    return llama_tokenizer(df["text"], padding="max_length", truncation=True, max_length=512)
+    return llama_tokenizer(df["input_ids"], padding="max_length", truncation=True, max_length=512)
 
 train_dataset = train_dataset.map(tokenize_function, batched=True)
 val_dataset = val_dataset.map(tokenize_function, batched=True)
