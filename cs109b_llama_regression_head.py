@@ -15,7 +15,7 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import pickle
 from transformers import LlamaForCausalLM, LlamaTokenizer
-'''
+
 
 access_token = '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'
 
@@ -24,12 +24,12 @@ base_model = LlamaForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", token=
 tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=access_token, return_tensors = 'tf')
 tokenizer.pad_token_id = (0)
 tokenizer.padding_side = "left"
-'''
+
 #url = 'https://raw.githubusercontent.com/lindenschrage/cs109b-finalproject/main/dataframe.csv'
 url = '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/dataframe.csv'
 df = pd.read_csv(url)
 df.head()
-'''
+
 top_layers = []
 
 tweet_text = list(df['Tweet'])
@@ -39,12 +39,12 @@ with torch.no_grad():
       output = base_model(**tokens)
       sentence_embeddings = output.hidden_states[-1].mean(dim=1)
       top_layers.append(sentence_embeddings.cpu().detach().numpy())
-'''
-top_layer_pickle_path = '/n/home09/lschrage/projects/cs109b/top_layers.pkl'
-'''
+
+top_layer_pickle_path = '/n/home09/lschrage/projects/cs109b/LLAMA_embeddings.pkl'
+
 with open(top_layer_pickle_path, 'wb') as f:
     pickle.dump(top_layers, f)
-'''
+
 with open(top_layer_pickle_path, 'rb') as f:
     top_layers_loaded = pickle.load(f)
 
