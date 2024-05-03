@@ -37,6 +37,7 @@ df['Tweet-tokens'] = embeddings.cpu().numpy().tolist()
 
 top_layers = list(df['Tweet-tokens'])
 '''
+
 tweet_annotation = list(df['TweetAvgAnnotation'])
 
 top_layer_pickle_path = '/n/home09/lschrage/projects/cs109b/top_layers_base.pkl'
