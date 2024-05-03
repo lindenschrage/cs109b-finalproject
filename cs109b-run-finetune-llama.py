@@ -43,7 +43,7 @@ tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=ACC
 url = '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/dataframe.csv'
 df = pd.read_csv(url)
 df.head()
-
+'''
 y = df['TweetAvgAnnotation']
 X = df
 
@@ -74,12 +74,15 @@ X_test['Prompt'] = X_test.apply(generate_test_prompt, axis=1)
 X_val['Prompt'] = X_val.apply(generate_test_prompt, axis=1)
 
 df_val = pd.DataFrame({
-    "text": X_val['Prompt'],
+    "input_ids": X_val['Prompt'],
     "labels": y_val
 })
 
 val_dataset = Dataset.from_pandas(df_val)
 
+val_loader = DataLoader(val_dataset, batch_size=8)
+'''
+val_dataset = load_from_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
 val_loader = DataLoader(val_dataset, batch_size=8)
 
 import re
@@ -105,7 +108,7 @@ true_labels = []
 with torch.no_grad():
     for batch in val_loader:
         # Generate predictions
-        outputs = model.generate(batch['input_ids'], attention_mask=batch['attention_mask'])
+        outputs = model.generate(batch['text'], attention_mask=batch['attention_mask'])
         prediction_texts = [tokenizer.decode(output, skip_special_tokens=True) for output in outputs]
         sentiments = [extract_sentiment(text) for text in prediction_texts]
         
