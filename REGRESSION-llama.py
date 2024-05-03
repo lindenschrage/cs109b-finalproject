@@ -20,7 +20,7 @@ from plot_functions import plot_loss, plot_mse, plot_predictions_vs_actual
 url = '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/dataframe.csv'
 df = pd.read_csv(url)
 
-get_llama_embeddings(df, '/n/home09/lschrage/projects/cs109b/LLAMA_embeddings.pkl')
+get_llama_embeddings(df, '/n/home09/lschrage/projects/cs109b/llama_embeddings.pkl')
 with open('/n/home09/lschrage/projects/cs109b/LLAMA_embeddings.pkl', 'rb') as f:
     top_layers_loaded = pickle.load(f)
 
