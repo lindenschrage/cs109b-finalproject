@@ -100,5 +100,5 @@ plot_loss(history, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/BERT-
 
 plot_mse(history,'/n/home09/lschrage/projects/cs109b/cs109b-finalproject/BERT-mse.png')
 
-plot_predictions_vs_actual(model, X_test, y_test, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/basemodel-actual-vs-predicted.png')
+plot_predictions_vs_actual(model, X_test, y_test, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/BERT-actual-vs-predicted.png')
 
