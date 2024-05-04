@@ -31,31 +31,17 @@ ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 df_url = 'https://raw.githubusercontent.com/lindenschrage/cs109b-data/main/dataframe.csv'
 df = pd.read_csv(df_url)
 
-bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_use_double_quant=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.bfloat16,
-)
-
 model_name = 'meta-llama/Llama-2-7b-hf'
 tokenizer = LlamaTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "right"
 
 
-llama_model = LlamaForSequenceClassification.from_pretrained(model_name, num_labels=1, quantization_config=bnb_config, token=ACCESS_TOKEN)
+llama_model = LlamaForSequenceClassification.from_pretrained(model_name, num_labels=1, token=ACCESS_TOKEN)
 
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
-
-config = LoraConfig( r=16, 
-    lora_alpha=32, 
-    lora_dropout=0.05, 
-    bias="none",
-    task_type="CAUSAL_LM" 
-)
-model = get_peft_model(llama_model, config)
+llama_model.config.pad_token_id = tokenizer.pad_token_id
 
 tweet_text = list(df['Tweet'])
 tweet_annotations = list(df['TweetAvgAnnotation'])
@@ -144,7 +130,7 @@ def plot_predictions_vs_actual_baseline(model, test_dataset, path):
     plt.grid(True)
     plt.savefig(path)
 
-plot_predictions_vs_actual_baseline(model, test_dataset, 'BASELINE-FINETUNE-llama-actual-vs-predicted.png')
+plot_predictions_vs_actual_baseline(llama_model, test_dataset, 'BASELINE-FINETUNE-llama-actual-vs-predicted.png')
 
 def compute_metrics_for_regression(eval_pred):
     predictions, labels = eval_pred
@@ -174,7 +160,7 @@ training_args = TrainingArguments(
 )
 
 trainer = SFTTrainer(
-    model=model,
+    model=llama_model,
     args=training_args,
     train_dataset=train_dataset,
     eval_dataset=val_dataset,
