@@ -101,16 +101,12 @@ from transformers import DataCollatorWithPadding
 
 data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
-train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=data_collator)
-val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, collate_fn=data_collator)
-test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, collate_fn=data_collator)
-
 def collate_fn(batch):
     input_ids = [item['input_ids'] for item in batch]
     attention_mask = [item['attention_mask'] for item in batch]
     labels = [item['labels'] for item in batch]
 
-    input_ids = pad_sequence(input_ids, batch_first=True, padding_value=0)
+    input_ids = pad_sequence(input_ids, batch_first=True, padding_value=tokenizer.pad_token_id)
     attention_mask = pad_sequence(attention_mask, batch_first=True, padding_value=0)
     labels = torch.stack(labels)
 
@@ -119,6 +115,10 @@ def collate_fn(batch):
         'attention_mask': attention_mask,
         'labels': labels
     }
+train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
+val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, collate_fn=collate_fn)
+test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, collate_fn=collate_fn)
+
 
 def plot_predictions_vs_actual_baseline(model, test_dataset, path):
     test_loader = DataLoader(test_dataset, batch_size=32, collate_fn=collate_fn)
@@ -179,7 +179,7 @@ trainer = SFTTrainer(
     train_dataset=train_dataset,
     eval_dataset=val_dataset,
     compute_metrics=compute_metrics_for_regression,
-    data_collator=data_collator,
+    data_collator=collate_fn,
     dataset_text_field='input_ids',
     max_seq_length=max_len
 )
