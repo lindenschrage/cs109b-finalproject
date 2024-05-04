@@ -60,7 +60,7 @@ test_dataset = TextDataset(test_texts, test_labels, tokenizer)
 
 BATCH_SIZE = 32
 LEARNING_RATE = 2e-5
-EPOCHS = 3
+EPOCHS = 25
 
 from transformers import DataCollatorWithPadding
 

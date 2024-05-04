@@ -79,6 +79,7 @@ class TextDataset(Dataset):
             text,
             padding="max_length", 
             truncation=True, 
+            return_tensors='pt',
             max_length=512
         )
         return {
