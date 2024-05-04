@@ -48,7 +48,7 @@ def get_llama_embeddings(df, path):
         for tweet in tweet_text:
             tokens = tokenizer(tweet, return_tensors='pt', padding=True).to('cuda')
             output = base_model(**tokens)
-            sentence_embeddings = output.hidden_states[-1].mean(dim=1)
+            sentence_embeddings = output.hidden_states[-1].mean(dim=1) # taking mean of last layer embeddings
             top_layers.append(sentence_embeddings.cpu().detach().numpy())
 
     with open(path, 'wb') as f:

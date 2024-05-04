@@ -175,3 +175,20 @@ def plot_predictions_vs_actual_finetune(model, test_dataset, path):
     plt.grid(True)
     plt.savefig(path)
 plot_predictions_vs_actual_finetune(trainer.model, test_dataset, 'FINETUNE-bert-actual-vs-predicted.png')
+
+history = pd.DataFrame(trainer.state.log_history)
+train_loss = history['loss'].dropna()
+val_loss = history['eval_loss'].dropna()
+
+def plot_train_val_loss(train_loss, val_loss, path):
+    epochs = range(1, len(train_loss) + 1)
+    plt.figure(figsize=(10, 5))
+    plt.plot(epochs, train_loss, label='Training MSE')
+    plt.plot(epochs, val_loss, label='Validation MSE')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation MSE')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(path)
+plot_train_val_loss(train_loss, val_loss, 'FINETUNE-bert-train-val-mse.png')

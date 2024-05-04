@@ -18,14 +18,42 @@ import os
 from dotenv import load_dotenv, dotenv_values 
 load_dotenv() 
 
+import peft
+from peft import prepare_model_for_kbit_training
+from peft import LoraConfig, get_peft_model
+import bitsandbytes as bnb
+
+
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 
 df_url = 'https://raw.githubusercontent.com/lindenschrage/cs109b-data/main/dataframe.csv'
 df = pd.read_csv(df_url)
 
+bnb_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_use_double_quant=True,
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_compute_dtype=torch.bfloat16,
+)
+
 model_name = 'meta-llama/Llama-2-7b-hf'
 tokenizer = LlamaTokenizer.from_pretrained(model_name)
-model = LlamaForSequenceClassification.from_pretrained(model_name, num_labels=1, token=ACCESS_TOKEN)
+tokenizer.pad_token = tokenizer.eos_token
+tokenizer.padding_side = "right"
+
+
+llama_model = LlamaForSequenceClassification.from_pretrained(model_name, num_labels=1, quantization_config=bnb_config, token=ACCESS_TOKEN)
+
+llama_model.config.use_cache = False
+llama_model.config.pretraining_tp = 1
+
+config = LoraConfig( r=16, 
+    lora_alpha=32, 
+    lora_dropout=0.05, 
+    bias="none",
+    task_type="CAUSAL_LM" 
+)
+model = get_peft_model(llama_model, config)
 
 tweet_text = list(df['Tweet'])
 tweet_annotations = list(df['TweetAvgAnnotation'])
@@ -47,10 +75,9 @@ class TextDataset(Dataset):
         label = self.labels[idx]
         encoding = self.tokenizer(
             text,
-            add_special_tokens=True,
-            padding=False,
-            truncation=True,
-            return_tensors='pt'
+            padding="max_length", 
+            truncation=True, 
+            max_length=512
         )
         return {
             'input_ids': encoding['input_ids'].squeeze(),
