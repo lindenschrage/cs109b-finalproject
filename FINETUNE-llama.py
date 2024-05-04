@@ -135,7 +135,7 @@ test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'l
 test_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-test-dataset')
 
 train_params = TrainingArguments(
-    output_dir="/n/home09/lschrage/projects/cs109b/cs109b-finalproject/resultsfinetunemodel",
+    output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
     num_train_epochs=2,
     per_device_train_batch_size=4,
     gradient_accumulation_steps=2,
