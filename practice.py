@@ -22,6 +22,8 @@ import peft
 from peft import prepare_model_for_kbit_training
 from peft import LoraConfig, get_peft_model
 import bitsandbytes as bnb
+from transformers import BitsAndBytesConfig
+
 
 
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
