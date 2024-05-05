@@ -70,7 +70,7 @@ X_test['Prompt'] = X_test.apply(generate_test_prompt, axis=1)
 X_val['Prompt'] = X_val.apply(generate_test_prompt, axis=1)
 
 model = "meta-llama/Llama-2-7b-hf"
-
+compute_dtype = getattr(torch, "float16")
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True, 
     bnb_4bit_quant_type="nf4", 
