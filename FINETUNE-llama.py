@@ -22,7 +22,7 @@ from peft import LoraConfig, get_peft_model
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, HfArgumentParser, TrainingArguments, pipeline
 from trl import SFTTrainer
 from datasets import Dataset
-#import wandb
+import wandb
 from sklearn.metrics import mean_squared_error
 from datasets import DatasetInfo, Features, Value
 from datasets import load_from_disk
@@ -32,7 +32,7 @@ import os
 from dotenv import load_dotenv, dotenv_values 
 load_dotenv() 
 
-#os.environ["WANDB_PROJECT"]="twitter-sentiment-analysis"
+os.environ["WANDB_PROJECT"]="twitter-sentiment-analysis"
 
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 
@@ -70,14 +70,15 @@ X_test['Prompt'] = X_test.apply(generate_test_prompt, axis=1)
 X_val['Prompt'] = X_val.apply(generate_test_prompt, axis=1)
 
 model = "meta-llama/Llama-2-7b-hf"
+
 compute_dtype = getattr(torch, "float16")
+
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True, 
     bnb_4bit_quant_type="nf4", 
     bnb_4bit_compute_dtype=compute_dtype,
     bnb_4bit_use_double_quant=True,
 )
-
 
 llama_model = LlamaForCausalLM.from_pretrained(
     "meta-llama/Llama-2-7b-hf",
@@ -88,11 +89,13 @@ llama_model = LlamaForCausalLM.from_pretrained(
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
 
-config = LoraConfig( r=16, 
-    lora_alpha=32, 
-    lora_dropout=0.05, 
-    bias="none",
-    task_type="CAUSAL_LM" 
+config = LoraConfig(
+        lora_alpha=16, 
+        lora_dropout=0.1,
+        r=64,
+        bias="none",
+        target_modules="all-linear",
+        task_type="CAUSAL_LM",
 )
 
 model = get_peft_model(llama_model, config)
@@ -135,32 +138,23 @@ test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'l
 #val_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
 test_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-test-dataset')
 
-peft_config = LoraConfig(
-        lora_alpha=16, 
-        lora_dropout=0.1,
-        r=64,
-        bias="none",
-        target_modules="all-linear",
-        task_type="CAUSAL_LM",
-)
-
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
     num_train_epochs=2,
-    per_device_train_batch_size=1,
-    gradient_accumulation_steps=8,
+    per_device_train_batch_size=4,
+    gradient_accumulation_steps=2,
     save_steps=25,
     logging_steps=1,
-    learning_rate=1e-5,
+    learning_rate=2e-4,
     weight_decay=0.001,
-    fp16=True,
+    fp16=False,
     bf16=False,
     max_grad_norm=0.3,
-    max_steps=1,
+    max_steps=-1,
     warmup_ratio=0.03,
     group_by_length=True,
     lr_scheduler_type="linear",
-    #report_to="wandb",
+    report_to="wandb",
     evaluation_strategy="steps",
     eval_steps=2000
 )
@@ -168,7 +162,6 @@ train_params = TrainingArguments(
 fine_tuning = SFTTrainer(
     model=model,
     train_dataset=train_dataset,
-    peft_config=peft_config,
     eval_dataset=val_dataset,
     tokenizer=llama_tokenizer,
     args=train_params,
