@@ -72,11 +72,12 @@ X_val['Prompt'] = X_val.apply(generate_test_prompt, axis=1)
 model = "meta-llama/Llama-2-7b-hf"
 
 bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_use_double_quant=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.bfloat16,
+    load_in_4bit=True, 
+    bnb_4bit_quant_type="nf4", 
+    bnb_4bit_compute_dtype=compute_dtype,
+    bnb_4bit_use_double_quant=True,
 )
+
 
 llama_model = LlamaForCausalLM.from_pretrained(
     "meta-llama/Llama-2-7b-hf",
@@ -134,20 +135,29 @@ test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'l
 #val_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
 test_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-test-dataset')
 
+peft_config = LoraConfig(
+        lora_alpha=16, 
+        lora_dropout=0.1,
+        r=64,
+        bias="none",
+        target_modules="all-linear",
+        task_type="CAUSAL_LM",
+)
+
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
     num_train_epochs=2,
-    per_device_train_batch_size=4,
-    gradient_accumulation_steps=2,
+    per_device_train_batch_size=1,
+    gradient_accumulation_steps=8,
     save_steps=25,
     logging_steps=1,
     learning_rate=1e-5,
     weight_decay=0.001,
-    fp16=False,
+    fp16=True,
     bf16=False,
-    max_grad_norm=1.0,
-    max_steps=-1,
-    warmup_ratio=0.1,
+    max_grad_norm=0.3,
+    max_steps=1,
+    warmup_ratio=0.03,
     group_by_length=True,
     lr_scheduler_type="linear",
     #report_to="wandb",
@@ -158,6 +168,7 @@ train_params = TrainingArguments(
 fine_tuning = SFTTrainer(
     model=model,
     train_dataset=train_dataset,
+    peft_config=peft_config,
     eval_dataset=val_dataset,
     tokenizer=llama_tokenizer,
     args=train_params,
