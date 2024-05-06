@@ -65,7 +65,8 @@ llama_model = LlamaForSequenceClassification.from_pretrained(
     token=ACCESS_TOKEN,
     quantization_config=bnb_config,
     num_labels=1,
-    problem_type='regression')
+    problem_type='regression',
+    ignore_mismatched_sizes=True)
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
 llama_model.config.pad_token_id = llama_model.config.eos_token_id
@@ -146,7 +147,7 @@ train_params = TrainingArguments(
     logging_steps=1,
     learning_rate=2e-4,
     weight_decay=0.001,
-    fp16=True,
+    fp16=False,
     bf16=False,
     max_grad_norm=0.3,
     max_steps=-1,
@@ -156,7 +157,8 @@ train_params = TrainingArguments(
     lr_scheduler_type="linear",
     report_to="wandb",
     evaluation_strategy="steps",
-    eval_steps=2000,
+    eval_steps=2000
+
 )
 
 fine_tuning = SFTTrainer(
@@ -165,7 +167,8 @@ fine_tuning = SFTTrainer(
     eval_dataset=val_dataset,
     tokenizer=llama_tokenizer,
     args=train_params,
-    dataset_text_field = 'input_ids'
+    dataset_text_field = 'input_ids',
+    max_seq_length=512
 )
 
 fine_tuning.train()
