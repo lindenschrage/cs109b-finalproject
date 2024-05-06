@@ -63,28 +63,25 @@ config = LoraConfig(
 
 model = get_peft_model(llama_model, config)
 
-tweet_text = list(df['Tweet'])
-tweet_annotations = list(df['TweetAvgAnnotation'])
+y = df['TweetAvgAnnotation']
+X = df
 
-tweet_text = list(df['Tweet'])
-tweet_annotations = list(df['TweetAvgAnnotation'])
-
-X_train_full, X_test, y_train_full, y_test = train_test_split(tweet_text, tweet_annotations, test_size=0.2, random_state=109)
+X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size=0.2, random_state=109)
 
 X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, test_size=0.2, random_state=109)
 
 df_train = pd.DataFrame({
-    "input_ids": X_train,
+    "input_ids": X_train['Tweet'],
     "labels": y_train
 })
 
 df_val = pd.DataFrame({
-    "input_ids": X_val,
+    "input_ids": X_val['Tweet'],
     "labels": y_val
 })
 
 df_test = pd.DataFrame({
-    "input_ids": X_test,
+    "input_ids": X_test['Tweet'],
     "labels": y_test
 })
 
