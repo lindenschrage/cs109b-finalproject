@@ -108,14 +108,6 @@ test_dataset = Dataset.from_pandas(df_test)
 
 def tokenize_function(df):
     tokenized_input = llama_tokenizer(df["input_ids"], padding="max_length", truncation=True, max_length=512)
-    
-    # Convert input_ids and attention_mask to tensors
-    tokenized_input['input_ids'] = torch.tensor(tokenized_input['input_ids'])
-    tokenized_input['attention_mask'] = torch.tensor(tokenized_input['attention_mask'])
-    
-    print("Input IDs dtype:", tokenized_input['input_ids'].dtype)
-    print("Attention Mask dtype:", tokenized_input['attention_mask'].dtype)
-    
     return tokenized_input
 
 train_dataset = train_dataset.map(tokenize_function, batched=True)
@@ -133,13 +125,14 @@ def convert_to_fp16(batch):
         batch['labels'] = torch.tensor(batch['labels'], dtype=torch.float16)
     else:
         batch['labels'] = batch['labels'].to(torch.float16)
+    
+    print("Labels dtype after conversion:", batch['labels'].dtype)
+    
     return batch
 
 train_dataset = train_dataset.map(convert_to_fp16, batched=True)
 val_dataset = val_dataset.map(convert_to_fp16, batched=True)
 
-train_dataset = train_dataset.map(convert_to_fp16, batched=True)
-val_dataset = val_dataset.map(convert_to_fp16, batched=True)
 
 
 #train_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
