@@ -68,6 +68,10 @@ llama_model = LlamaForSequenceClassification.from_pretrained(
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
 llama_model.config.pad_token_id = llama_model.config.eos_token_id
+llama_model.classifier.out_proj.weight.data = llama_model.classifier.out_proj.weight.data.to(torch.float16)
+llama_model.classifier.out_proj.bias.data = llama_model.classifier.out_proj.bias.data.to(torch.float16)
+
+
 
 config = LoraConfig(
         lora_alpha=16, 
@@ -104,7 +108,10 @@ val_dataset = Dataset.from_pandas(df_val)
 test_dataset = Dataset.from_pandas(df_test)
 
 def tokenize_function(df):
-    return llama_tokenizer(df["input_ids"], padding="max_length", truncation=True, max_length=512)
+    tokenized_input = llama_tokenizer(df["input_ids"], padding="max_length", truncation=True, max_length=512)
+    print("Input IDs dtype:", tokenized_input['input_ids'].dtype)
+    print("Attention Mask dtype:", tokenized_input['attention_mask'].dtype)
+    return tokenized_input
 
 train_dataset = train_dataset.map(tokenize_function, batched=True)
 val_dataset = val_dataset.map(tokenize_function, batched=True)
@@ -117,10 +124,15 @@ test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'l
 
 def convert_to_fp16(batch):
     # Convert labels to float16 for compatibility with fp16 training
-    batch['labels'] = batch['labels'].to(torch.float16)
+    if isinstance(batch['labels'], list):
+        batch['labels'] = torch.tensor(batch['labels'], dtype=torch.float16)
+    else:
+        batch['labels'] = batch['labels'].to(torch.float16)
     return batch
 
-# Apply conversion to the train and validation datasets
+train_dataset = train_dataset.map(convert_to_fp16, batched=True)
+val_dataset = val_dataset.map(convert_to_fp16, batched=True)
+
 train_dataset = train_dataset.map(convert_to_fp16, batched=True)
 val_dataset = val_dataset.map(convert_to_fp16, batched=True)
 
