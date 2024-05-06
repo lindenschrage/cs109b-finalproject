@@ -66,7 +66,8 @@ llama_model = LlamaForSequenceClassification.from_pretrained(
     quantization_config=bnb_config,
     num_labels=1,
     problem_type='regression',
-    ignore_mismatched_sizes=True)
+    ignore_mismatched_sizes=True,
+    torch_dtype=torch.float16,)
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
 llama_model.config.pad_token_id = llama_model.config.eos_token_id
@@ -181,7 +182,8 @@ fine_tuning = DebugTrainer(
     args=train_params,
     train_dataset=train_dataset,
     eval_dataset=val_dataset,
-    tokenizer=llama_tokenizer
+    tokenizer=llama_tokenizer,
+    dataset_text_field = 'input_ids',
 )
 '''
 fine_tuning = SFTTrainer(
