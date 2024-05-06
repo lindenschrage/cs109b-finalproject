@@ -70,7 +70,6 @@ llama_model = LlamaForSequenceClassification.from_pretrained(
     torch_dtype=torch.float16,)
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
-llama_model.config.pad_token_id = llama_model.config.eos_token_id
 
 
 
@@ -86,8 +85,6 @@ config = LoraConfig(
 model = get_peft_model(llama_model, config)
 
 llama_tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=ACCESS_TOKEN)
-llama_tokenizer.pad_token = llama_tokenizer.eos_token
-llama_tokenizer.padding_side = "right"
 
 df_train = pd.DataFrame({
     "input_ids": X_train['Tweet'],
@@ -110,7 +107,7 @@ test_dataset = Dataset.from_pandas(df_test)
 
 def process_inputs(example):
     # Tokenize the inputs
-    result = llama_tokenizer(example['input_ids'], padding="max_length", truncation=True, max_length=512)
+    result = llama_tokenizer(example['input_ids'])
     # Make sure labels are maintained as scalars
     result['labels'] = example['labels']
     return result
