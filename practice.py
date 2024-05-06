@@ -43,6 +43,8 @@ print(df.head())
 y = df['TweetAvgAnnotation']
 X = df
 
+y = [num.astype(np.float16) for num in y]
+
 X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size=0.2, random_state=109, stratify=X['Sentiment'])
 
 X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, test_size=0.2, random_state=109, stratify=X_train_full['Sentiment'])
@@ -107,11 +109,6 @@ def tokenize_function(df):
 train_dataset = train_dataset.map(tokenize_function, batched=True)
 val_dataset = val_dataset.map(tokenize_function, batched=True)
 test_dataset = test_dataset.map(tokenize_function, batched=True)
-
-train_dataset = train_dataset.map(lambda examples: {'labels': examples['labels'].astype(np.float32)}, batched=True)
-val_dataset = val_dataset.map(lambda examples: {'labels': examples['labels'].astype(np.float32)}, batched=True)
-test_dataset = test_dataset.map(lambda examples: {'labels': examples['labels'].astype(np.float32)}, batched=True)
-
 
 
 train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
