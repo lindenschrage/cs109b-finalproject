@@ -135,8 +135,9 @@ train_dataset = train_dataset.map(convert_to_fp16, batched=True)
 val_dataset = val_dataset.map(convert_to_fp16, batched=True)
 print("3",train_dataset['labels'][:5])
 
-for data in train_dataset:
-    print(data)
+for i, data in enumerate(train_dataset):
+    if i < 5:  # Limit to first 5 examples
+        print("Dataset sample:", data)
 
 #train_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
 #val_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
@@ -174,8 +175,6 @@ class DebugTrainer(SFTTrainer):
         
         # Print shapes and values for debugging
         print("Inputs", inputs)
-        print("Inputs shape", inputs.shape)
-
         print(f"Logits shape: {logits.shape}, Labels shape: {labels.shape}")
         print(f"First few logits: {logits[:5]}, First few labels: {labels[:5]}")
         
