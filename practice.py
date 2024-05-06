@@ -12,7 +12,7 @@ import bitsandbytes as bnb
 from sklearn.model_selection import train_test_split
 import torch
 import transformers
-from transformers import LlamaTokenizer, LlamaForCausalLM, BitsAndBytesConfig, pipeline
+from transformers import LlamaTokenizer, LlamaForSequenceClassification, BitsAndBytesConfig, pipeline
 import torch.nn.functional as F
 import accelerate
 import sklearn
@@ -58,12 +58,11 @@ bnb_config = BitsAndBytesConfig(
     bnb_4bit_use_double_quant=True,
 )
 
-llama_model = LlamaForCausalLM.from_pretrained(
+llama_model = LlamaForSequenceClassification.from_pretrained(
     "meta-llama/Llama-2-7b-hf",
     token=ACCESS_TOKEN,
     quantization_config=bnb_config,
-    output_hidden_states=False,
-    output_attentions=False)
+    num_labels=1)
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
 
@@ -112,6 +111,10 @@ train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', '
 val_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
+train_dataset = train_dataset.map(lambda examples: {'labels': examples['labels'].float()})
+val_dataset = val_dataset.map(lambda examples: {'labels': examples['labels'].float()})
+
+
 #train_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
 #val_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
 test_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-test-dataset')
@@ -131,6 +134,7 @@ train_params = TrainingArguments(
     max_steps=-1,
     warmup_ratio=0.03,
     group_by_length=True,
+    metric_for_best_model="mse",
     lr_scheduler_type="linear",
     report_to="wandb",
     evaluation_strategy="steps",
