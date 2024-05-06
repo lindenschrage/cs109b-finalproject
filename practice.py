@@ -24,6 +24,8 @@ from peft import prepare_model_for_kbit_training
 from peft import LoraConfig, get_peft_model
 import bitsandbytes as bnb
 from transformers import BitsAndBytesConfig
+from datasets import Dataset
+
 
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 os.environ["WANDB_PROJECT"]="twitter-sentiment-analysis"
