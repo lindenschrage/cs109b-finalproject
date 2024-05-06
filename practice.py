@@ -112,9 +112,9 @@ def process_inputs(example):
     result['labels'] = example['labels']
     return result
 
-train_dataset = train_dataset.map(process_inputs, batched=False)
-val_dataset = val_dataset.map(process_inputs, batched=False)
-test_dataset = test_dataset.map(process_inputs, batched=False)
+train_dataset = train_dataset.map(process_inputs, batched=True)
+val_dataset = val_dataset.map(process_inputs, batched=True)
+test_dataset = test_dataset.map(process_inputs, batched=True)
 
 print("1", train_dataset['labels'][:5])
 train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
@@ -131,8 +131,8 @@ def convert_to_fp16(batch):
     return batch
 
 
-train_dataset = train_dataset.map(convert_to_fp16, batched=False)
-val_dataset = val_dataset.map(convert_to_fp16, batched=False)
+train_dataset = train_dataset.map(convert_to_fp16, batched=True)
+val_dataset = val_dataset.map(convert_to_fp16, batched=True)
 print("3",train_dataset['labels'][:5])
 
 for data in train_dataset:
