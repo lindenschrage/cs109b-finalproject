@@ -106,14 +106,16 @@ train_dataset = Dataset.from_pandas(df_train)
 val_dataset = Dataset.from_pandas(df_val)
 test_dataset = Dataset.from_pandas(df_test)
 
-def tokenize_function(df):
-    tokenized_input = llama_tokenizer(df["input_ids"], padding="max_length", truncation=True, max_length=512)
-    return tokenized_input
+def process_inputs(example):
+    # Tokenize the inputs
+    result = llama_tokenizer(example['input_ids'], padding="max_length", truncation=True, max_length=512)
+    # Add labels, ensuring they are not processed as sequences
+    result['labels'] = [example['labels']]
+    return result
 
-train_dataset = train_dataset.map(tokenize_function, batched=True)
-val_dataset = val_dataset.map(tokenize_function, batched=True)
-test_dataset = test_dataset.map(tokenize_function, batched=True)
-
+train_dataset = train_dataset.map(process_inputs, batched=True)
+val_dataset = val_dataset.map(process_inputs, batched=True)
+test_dataset = test_dataset.map(process_inputs, batched=True)
 
 train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 val_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
