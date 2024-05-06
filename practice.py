@@ -67,22 +67,22 @@ tweet_annotations = list(df['TweetAvgAnnotation'])
 tweet_text = list(df['Tweet'])
 tweet_annotations = list(df['TweetAvgAnnotation'])
 
-X_train_full, X_test, y_train_full, y_test = train_test_split(tweet_text, tweet_annotations, test_size=0.2, random_state=109, stratify=X['Sentiment'])
+X_train_full, X_test, y_train_full, y_test = train_test_split(tweet_text, tweet_annotations, test_size=0.2, random_state=109)
 
-X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, test_size=0.5, random_state=109, stratify=X_train_full['Sentiment'])
+X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, test_size=0.2, random_state=109)
 
 df_train = pd.DataFrame({
-    "input_ids": X_train['Tweet'],
+    "input_ids": X_train,
     "labels": y_train
 })
 
 df_val = pd.DataFrame({
-    "input_ids": X_val['Tweet'],
+    "input_ids": X_val,
     "labels": y_val
 })
 
 df_test = pd.DataFrame({
-    "input_ids": X_test['Tweet'],
+    "input_ids": X_test,
     "labels": y_test
 })
 
