@@ -135,7 +135,20 @@ train_dataset = train_dataset.map(convert_to_fp16, batched=False)
 val_dataset = val_dataset.map(convert_to_fp16, batched=False)
 print("3",train_dataset['labels'][:5])
 
+for data in train_dataset:
+    inputs, labels = data
+    print("Input shape:", inputs.shape)
+    print("Labels shape:", labels.shape)
+    if labels.shape != torch.Size([1, 1]):
+        print("Incorrect label shape:", labels)
+        # Potentially reshape or select the correct labels
+        labels = labels.view(1, 1)  # Adjust this based on your specific needs
+        print("Fixed Labels shape:", labels.shape)
 
+    # Now pass to model and compute loss
+    logits = model(inputs)
+    loss = F.mse_loss(logits, labels)
+    print("Loss:", loss.item())
 
 #train_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
 #val_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
