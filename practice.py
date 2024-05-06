@@ -68,8 +68,6 @@ llama_model = LlamaForSequenceClassification.from_pretrained(
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
 llama_model.config.pad_token_id = llama_model.config.eos_token_id
-llama_model.classifier.out_proj.weight.data = llama_model.classifier.out_proj.weight.data.to(torch.float16)
-llama_model.classifier.out_proj.bias.data = llama_model.classifier.out_proj.bias.data.to(torch.float16)
 
 
 
