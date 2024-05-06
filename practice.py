@@ -116,11 +116,19 @@ train_dataset = train_dataset.map(process_inputs, batched=True)
 val_dataset = val_dataset.map(process_inputs, batched=True)
 test_dataset = test_dataset.map(process_inputs, batched=True)
 
-print("1", train_dataset['labels'][:5])
 train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 val_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
-print("2",train_dataset['labels'][:5])
+
+
+from transformers import DataCollatorWithPadding
+
+data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+
+train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, collate_fn=data_collator)
+val_loader = DataLoader(val_dataset, batch_size=1, collate_fn=data_collator)
+test_loader = DataLoader(test_dataset, batch_size=1, collate_fn=data_collator)
+
 
 
 def convert_to_fp16(batch):
@@ -133,11 +141,8 @@ def convert_to_fp16(batch):
 
 train_dataset = train_dataset.map(convert_to_fp16, batched=True)
 val_dataset = val_dataset.map(convert_to_fp16, batched=True)
-print("3",train_dataset['labels'][:5])
 
-for i, data in enumerate(train_dataset):
-    if i < 5:  # Limit to first 5 examples
-        print("Dataset sample:", data)
+train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
 
 #train_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
 #val_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
@@ -189,6 +194,7 @@ fine_tuning = DebugTrainer(
     eval_dataset=val_dataset,
     tokenizer=llama_tokenizer,
     dataset_text_field = 'input_ids',
+    data_collator=data_collator
 )
 '''
 fine_tuning = SFTTrainer(
