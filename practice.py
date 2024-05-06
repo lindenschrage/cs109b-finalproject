@@ -63,23 +63,27 @@ config = LoraConfig(
 
 model = get_peft_model(llama_model, config)
 
-y = df['TweetAvgAnnotation']
 X = df
+y = df['TweetAvgAnnotation'].astype(float)
 
+# Create train, validation, and test splits
 X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size=0.2, random_state=109)
-
 X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, test_size=0.2, random_state=109)
 
+# Ensure labels are 1D arrays of correct dtype
+y_train = y_train.values.ravel().astype(np.float32)
+y_val = y_val.values.ravel().astype(np.float32)
+y_test = y_test.values.ravel().astype(np.float32)
+
+# Prepare dataframes for datasets
 df_train = pd.DataFrame({
     "input_ids": X_train['Tweet'],
     "labels": y_train
 })
-
 df_val = pd.DataFrame({
     "input_ids": X_val['Tweet'],
     "labels": y_val
 })
-
 df_test = pd.DataFrame({
     "input_ids": X_test['Tweet'],
     "labels": y_test
