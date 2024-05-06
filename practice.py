@@ -120,13 +120,14 @@ val_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'la
 test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
 def convert_to_fp16(batch):
-    # Convert individual labels to float16 for compatibility with fp16 training
+    # Convert individual labels to float16 tensors
     if isinstance(batch['labels'], list):
-        batch['labels'] = [torch.tensor(label, dtype=torch.float16) for label in batch['labels']]
+        batch['labels'] = [torch.tensor([label], dtype=torch.float16) for label in batch['labels']]
     else:
-        batch['labels'] = batch['labels'].to(torch.float16)
+        batch['labels'] = batch['labels'].unsqueeze(1).to(torch.float16)
     
     print("Labels dtype after conversion:", batch['labels'][0].dtype)
+    print("Labels shape after conversion:", batch['labels'][0].shape)
     
     return batch
 
