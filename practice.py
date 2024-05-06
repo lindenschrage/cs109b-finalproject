@@ -1,38 +1,53 @@
+
 import torch
-from torch.utils.data import DataLoader, Dataset
-from transformers import LlamaTokenizer, LlamaForSequenceClassification, AdamW
-from transformers import get_linear_schedule_with_warmup
-from torch.optim.lr_scheduler import ExponentialLR
+from torch.utils.data import Dataset, DataLoader
+import pandas as pd
+from transformers import AutoTokenizer
+
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error
-from sklearn.metrics import mean_squared_error
-from sklearn.metrics import r2_score
-from trl import SFTTrainer
-from sklearn.metrics import r2_score
-from transformers import TrainingArguments, Trainer
 import matplotlib.pyplot as plt
-from torch.nn.utils.rnn import pad_sequence
-import os
-from dotenv import load_dotenv, dotenv_values 
-import wandb
-load_dotenv() 
-
+import re
+import bitsandbytes as bnb
+from sklearn.model_selection import train_test_split
+import torch
+import transformers
+from transformers import LlamaTokenizer, LlamaForCausalLM, BitsAndBytesConfig, pipeline
+import torch.nn.functional as F
+import accelerate
+import sklearn
 import peft
 from peft import prepare_model_for_kbit_training
 from peft import LoraConfig, get_peft_model
-import bitsandbytes as bnb
-from transformers import BitsAndBytesConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, HfArgumentParser, TrainingArguments, pipeline
+from trl import SFTTrainer
 from datasets import Dataset
+import wandb
+from sklearn.metrics import mean_squared_error
+from datasets import DatasetInfo, Features, Value
+from datasets import load_from_disk
+import accelerate
+from peft import LoraConfig, get_peft_model 
+import os
+from dotenv import load_dotenv, dotenv_values 
+load_dotenv() 
 
+os.environ["WANDB_PROJECT"]="twitter-sentiment-analysis"
 
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
-os.environ["WANDB_PROJECT"]="twitter-sentiment-analysis"
 
 url = 'dataframe.csv'
 df = pd.read_csv(url)
 print(df.head())
+
+y = df['TweetAvgAnnotation']
+X = df
+
+X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size=0.2, random_state=109, stratify=X['Sentiment'])
+
+X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, test_size=0.2, random_state=109, stratify=X_train_full['Sentiment'])
+
+model = "meta-llama/Llama-2-7b-hf"
 
 compute_dtype = getattr(torch, "float16")
 
@@ -43,14 +58,14 @@ bnb_config = BitsAndBytesConfig(
     bnb_4bit_use_double_quant=True,
 )
 
-model_name = 'meta-llama/Llama-2-7b-hf'
-llama_model = LlamaForSequenceClassification.from_pretrained(model_name, num_labels=1, quantization_config=bnb_config, token=ACCESS_TOKEN)
+llama_model = LlamaForCausalLM.from_pretrained(
+    "meta-llama/Llama-2-7b-hf",
+    token=ACCESS_TOKEN,
+    quantization_config=bnb_config,
+    output_hidden_states=False,
+    output_attentions=False)
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
-
-tokenizer = LlamaTokenizer.from_pretrained(model_name)
-tokenizer.pad_token = tokenizer.eos_token
-tokenizer.padding_side = "right"
 
 config = LoraConfig(
         lora_alpha=16, 
@@ -63,27 +78,20 @@ config = LoraConfig(
 
 model = get_peft_model(llama_model, config)
 
-X = df
-y = df['TweetAvgAnnotation'].astype(float)
+llama_tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=ACCESS_TOKEN)
+llama_tokenizer.pad_token = llama_tokenizer.eos_token
+llama_tokenizer.padding_side = "right"
 
-# Create train, validation, and test splits
-X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size=0.2, random_state=109)
-X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, test_size=0.2, random_state=109)
-
-# Ensure labels are 1D arrays of correct dtype
-y_train = y_train.values.ravel().astype(np.float32)
-y_val = y_val.values.ravel().astype(np.float32)
-y_test = y_test.values.ravel().astype(np.float32)
-
-# Prepare dataframes for datasets
 df_train = pd.DataFrame({
     "input_ids": X_train['Tweet'],
     "labels": y_train
 })
+
 df_val = pd.DataFrame({
     "input_ids": X_val['Tweet'],
     "labels": y_val
 })
+
 df_test = pd.DataFrame({
     "input_ids": X_test['Tweet'],
     "labels": y_test
@@ -94,7 +102,7 @@ val_dataset = Dataset.from_pandas(df_val)
 test_dataset = Dataset.from_pandas(df_test)
 
 def tokenize_function(df):
-    return tokenizer(df["input_ids"], padding="max_length", truncation=True, max_length=512)
+    return llama_tokenizer(df["input_ids"], padding="max_length", truncation=True, max_length=512)
 
 train_dataset = train_dataset.map(tokenize_function, batched=True)
 val_dataset = val_dataset.map(tokenize_function, batched=True)
@@ -104,45 +112,82 @@ train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', '
 val_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
-def compute_metrics_for_regression(eval_pred):
-    predictions, labels = eval_pred
-    mse = mean_squared_error(labels, predictions)
-    mae = mean_absolute_error(labels, predictions)
-    r2 = r2_score(labels, predictions)
-    return {
-        'mse': mse,
-        'mae': mae,
-        'r2': r2
-    }
+#train_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
+#val_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
+test_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-test-dataset')
 
-training_args = TrainingArguments(
-    output_dir="/n/home09/lschrage/projects/cs109b/FINETUNE-llama",
+train_params = TrainingArguments(
+    output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
+    num_train_epochs=1,
+    per_device_train_batch_size=4,
+    gradient_accumulation_steps=2,
+    save_steps=25,
+    logging_steps=1,
     learning_rate=2e-4,
-    per_device_train_batch_size=1,
-    per_device_eval_batch_size=8,
-    num_train_epochs=2,
-    evaluation_strategy="epoch",
-    save_strategy="epoch",
-    save_total_limit=2,
-    metric_for_best_model="mse",
-    load_best_model_at_end=True,
     weight_decay=0.001,
-    warmup_ratio=0.03, 
-    fp16=True,
+    fp16=False,
     bf16=False,
-    logging_strategy="epoch",
-    logging_steps=50,
-    report_to="wandb"
+    max_grad_norm=0.3,
+    max_steps=-1,
+    warmup_ratio=0.03,
+    group_by_length=True,
+    lr_scheduler_type="linear",
+    report_to="wandb",
+    evaluation_strategy="steps",
+    eval_steps=2000
 )
 
-trainer = SFTTrainer(
+fine_tuning = SFTTrainer(
     model=model,
-    args=training_args,
     train_dataset=train_dataset,
     eval_dataset=val_dataset,
-    compute_metrics=compute_metrics_for_regression,
-    dataset_text_field='input_ids',
-    max_seq_length=512
+    tokenizer=llama_tokenizer,
+    args=train_params,
+    dataset_text_field = 'input_ids'
 )
 
-trainer.train()
+fine_tuning.train()
+
+fine_tuning.model.save_pretrained('/n/home09/lschrage/projects/cs109b/finetuned_model')
+
+
+'''
+import torch
+import torch.nn.functional as F
+
+class CustomLoss(torch.nn.Module):
+    def __init__(self, allowed_token_ids):
+        super().__init__()
+        self.allowed_token_ids = allowed_token_ids
+
+    def forward(self, predictions, labels):
+        loss = F.cross_entropy(predictions, labels, reduction='none')
+
+        penalty_mask = ~labels.unsqueeze(-1).isin(self.allowed_token_ids)
+        penalties = penalty_mask.float() * 10.0  # Arbitrary high penalty
+        loss += penalties.sum(-1)
+
+        return loss.mean()
+
+
+
+class CustomTrainer(Trainer):
+    def compute_loss(self, model, inputs, return_outputs=False):
+        labels = inputs.pop("labels")
+        outputs = model(**inputs)
+        logits = outputs.logits
+        loss = custom_loss(logits, labels)
+        return (loss, outputs) if return_outputs else loss
+
+allowed_token_ids = tokenizer.convert_tokens_to_ids(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '-'])
+custom_loss = CustomLoss(allowed_token_ids)
+
+trainer = CustomTrainer(
+    model=llama_model,
+    args=train_params,
+    train_dataset=train_dataset,
+    tokenizer=llama_tokenizer,
+    compute_loss=custom_loss
+)
+
+'''
