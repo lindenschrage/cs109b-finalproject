@@ -64,7 +64,8 @@ llama_model = LlamaForSequenceClassification.from_pretrained(
     "meta-llama/Llama-2-7b-hf",
     token=ACCESS_TOKEN,
     quantization_config=bnb_config,
-    num_labels=1)
+    num_labels=1,
+    problem_type='regression')
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
 llama_model.config.pad_token_id = llama_model.config.eos_token_id
@@ -77,7 +78,7 @@ config = LoraConfig(
         r=64,
         bias="none",
         target_modules="all-linear",
-        task_type="CAUSAL_LM",
+        task_type="SEQ_CLS",
 )
 
 model = get_peft_model(llama_model, config)
