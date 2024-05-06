@@ -121,12 +121,8 @@ val_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'la
 test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
 
-
-
 def convert_to_fp16(batch):
-    # Convert labels to float16 and reshape to match expected model output dimensions
     labels = batch['labels'].clone().detach().to(dtype=torch.float16).unsqueeze(-1)
-  # Shape should be [batch_size, 1]
     batch['labels'] = labels
     return batch
 
@@ -145,14 +141,11 @@ class CustomCollatorWithPadding:
         self.data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
     def __call__(self, batch):
-        # Use the Hugging Face collator to handle input_ids and attention_mask
         batch = self.data_collator(batch)
-        # Ensure labels are still float16 after collation
         if 'labels' in batch:
             batch['labels'] = batch['labels'].to(dtype=torch.float16)
         return batch
 
-# Now use this custom collator for your DataLoaders
 data_collator = CustomCollatorWithPadding(tokenizer=llama_tokenizer)
 train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, collate_fn=data_collator)
 val_loader = DataLoader(val_dataset, batch_size=1, collate_fn=data_collator)
@@ -185,34 +178,6 @@ train_params = TrainingArguments(
 
 )
 
-
-class DebugTrainer(SFTTrainer):
-    def compute_loss(self, model, inputs, return_outputs=False):
-        outputs = model(**inputs)
-        logits = outputs.logits
-        labels = inputs.get("labels")
-        
-        # Print shapes and values for debugging
-        print("Labels details:")
-        print(f"Data type of labels: {labels.dtype}")
-        print(f"Shape of labels: {labels.shape}")
-        print(f"First few labels: {labels[:5]}")  # Show the first few elements
-
-        
-        loss = torch.nn.functional.mse_loss(logits, labels)
-        return (loss, outputs) if return_outputs else loss
-
-# Use this trainer for debugging
-fine_tuning = DebugTrainer(
-    model=model,
-    args=train_params,
-    train_dataset=train_dataset,
-    eval_dataset=val_dataset,
-    tokenizer=llama_tokenizer,
-    dataset_text_field = 'input_ids',
-    data_collator=data_collator
-)
-'''
 fine_tuning = SFTTrainer(
     model=model,
     train_dataset=train_dataset,
@@ -220,9 +185,10 @@ fine_tuning = SFTTrainer(
     tokenizer=llama_tokenizer,
     args=train_params,
     dataset_text_field = 'input_ids',
-    max_seq_length=512
+    max_seq_length=512,
+    data_collator=data_collator
 )
-'''
+
 fine_tuning.train()
 
 fine_tuning.model.save_pretrained('/n/home09/lschrage/projects/cs109b/finetuned_model')
