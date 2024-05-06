@@ -123,7 +123,7 @@ test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'l
 
 from transformers import DataCollatorWithPadding
 
-data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+data_collator = DataCollatorWithPadding(tokenizer=llama_tokenizer)
 
 train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, collate_fn=data_collator)
 val_loader = DataLoader(val_dataset, batch_size=1, collate_fn=data_collator)
