@@ -85,7 +85,7 @@ config = LoraConfig(
 model = get_peft_model(llama_model, config)
 
 llama_tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=ACCESS_TOKEN)
-
+llama_tokenizer.pad_token = llama_tokenizer.eos_token 
 df_train = pd.DataFrame({
     "input_ids": X_train['Tweet'],
     "labels": y_train
