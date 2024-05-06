@@ -112,9 +112,9 @@ def process_inputs(example):
     result['labels'] = example['labels']
     return result
 
-train_dataset = train_dataset.map(process_inputs, batched=True)
-val_dataset = val_dataset.map(process_inputs, batched=True)
-test_dataset = test_dataset.map(process_inputs, batched=True)
+train_dataset = train_dataset.map(process_inputs, batched=False)
+val_dataset = val_dataset.map(process_inputs, batched=False)
+test_dataset = test_dataset.map(process_inputs, batched=False)
 
 print("1", train_dataset['labels'][:5])
 train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
@@ -125,20 +125,21 @@ print("2",train_dataset['labels'][:5])
 
 def convert_to_fp16(batch):
     # Convert labels to float16 and reshape to match expected model output dimensions
-    labels = torch.tensor(batch['labels'], dtype=torch.float16).unsqueeze(-1)  # Shape should be [batch_size, 1]
+    labels = batch['labels'].clone().detach().to(dtype=torch.float16).unsqueeze(-1)
+  # Shape should be [batch_size, 1]
     batch['labels'] = labels
     return batch
 
 
-train_dataset = train_dataset.map(convert_to_fp16, batched=True)
-val_dataset = val_dataset.map(convert_to_fp16, batched=True)
+train_dataset = train_dataset.map(convert_to_fp16, batched=False)
+val_dataset = val_dataset.map(convert_to_fp16, batched=False)
 print("3",train_dataset['labels'][:5])
 
 
 
 #train_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
 #val_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
-test_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-test-dataset')
+#test_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-test-dataset')
 
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
