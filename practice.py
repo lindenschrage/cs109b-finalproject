@@ -108,8 +108,14 @@ test_dataset = Dataset.from_pandas(df_test)
 
 def tokenize_function(df):
     tokenized_input = llama_tokenizer(df["input_ids"], padding="max_length", truncation=True, max_length=512)
+    
+    # Convert input_ids and attention_mask to tensors
+    tokenized_input['input_ids'] = torch.tensor(tokenized_input['input_ids'])
+    tokenized_input['attention_mask'] = torch.tensor(tokenized_input['attention_mask'])
+    
     print("Input IDs dtype:", tokenized_input['input_ids'].dtype)
     print("Attention Mask dtype:", tokenized_input['attention_mask'].dtype)
+    
     return tokenized_input
 
 train_dataset = train_dataset.map(tokenize_function, batched=True)
