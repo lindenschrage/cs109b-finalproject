@@ -110,7 +110,7 @@ def process_inputs(example):
     # Tokenize the inputs
     result = llama_tokenizer(example['input_ids'], padding="max_length", truncation=True, max_length=512)
     # Add labels, ensuring they are not processed as sequences
-    result['labels'] = [example['labels']]
+    result['labels'] = example['labels']
     return result
 
 train_dataset = train_dataset.map(process_inputs, batched=True)
