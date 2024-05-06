@@ -65,6 +65,7 @@ llama_model = LlamaForSequenceClassification.from_pretrained(
     num_labels=1)
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
+llama_model.config.pad_token_id = llama_model.config.eos_token_id
 
 config = LoraConfig(
         lora_alpha=16, 
@@ -122,7 +123,7 @@ test_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalprojec
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
     num_train_epochs=1,
-    per_device_train_batch_size=4,
+    per_device_train_batch_size=1,
     gradient_accumulation_steps=2,
     save_steps=25,
     logging_steps=1,
