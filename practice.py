@@ -111,7 +111,7 @@ test_dataset = Dataset.from_pandas(df_test)
 def process_inputs(example):
     # Tokenize the inputs
     result = llama_tokenizer(example['input_ids'], padding="max_length", truncation=True, max_length=512)
-    # Add labels, ensuring they are not processed as sequences
+    # Make sure labels are maintained as scalars
     result['labels'] = example['labels']
     return result
 
@@ -119,19 +119,23 @@ train_dataset = train_dataset.map(process_inputs, batched=True)
 val_dataset = val_dataset.map(process_inputs, batched=True)
 test_dataset = test_dataset.map(process_inputs, batched=True)
 
+print("1", train_dataset['labels'][:5])
 train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 val_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
+print("2",train_dataset['labels'][:5])
+
 
 def convert_to_fp16(batch):
-    labels = torch.tensor(batch['labels'], dtype=torch.float16).unsqueeze(-1)
+    # Convert labels to float16 and reshape to match expected model output dimensions
+    labels = torch.tensor(batch['labels'], dtype=torch.float16).unsqueeze(-1)  # Shape should be [batch_size, 1]
     batch['labels'] = labels
-    print("Input shape:", batch['input_ids'].shape)
-    print("Labels shape:", batch['labels'].shape)
     return batch
+
 
 train_dataset = train_dataset.map(convert_to_fp16, batched=True)
 val_dataset = val_dataset.map(convert_to_fp16, batched=True)
+print("3",train_dataset['labels'][:5])
 
 
 
