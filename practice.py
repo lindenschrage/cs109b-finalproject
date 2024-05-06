@@ -43,7 +43,7 @@ print(df.head())
 y = df['TweetAvgAnnotation']
 X = df
 
-y = [num.astype(np.float16) for num in y]
+y = np.array(y, dtype=np.float16)
 
 X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size=0.2, random_state=109, stratify=X['Sentiment'])
 
