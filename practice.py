@@ -161,6 +161,29 @@ train_params = TrainingArguments(
 
 )
 
+
+class DebugTrainer(SFTTrainer):
+    def compute_loss(self, model, inputs, return_outputs=False):
+        outputs = model(**inputs)
+        logits = outputs.logits
+        labels = inputs.get("labels")
+        
+        # Print shapes and values for debugging
+        print(f"Logits shape: {logits.shape}, Labels shape: {labels.shape}")
+        print(f"First few logits: {logits[:5]}, First few labels: {labels[:5]}")
+        
+        loss = torch.nn.functional.mse_loss(logits, labels)
+        return (loss, outputs) if return_outputs else loss
+
+# Use this trainer for debugging
+fine_tuning = DebugTrainer(
+    model=model,
+    args=train_params,
+    train_dataset=train_dataset,
+    eval_dataset=val_dataset,
+    tokenizer=llama_tokenizer
+)
+'''
 fine_tuning = SFTTrainer(
     model=model,
     train_dataset=train_dataset,
@@ -170,7 +193,7 @@ fine_tuning = SFTTrainer(
     dataset_text_field = 'input_ids',
     max_seq_length=512
 )
-
+'''
 fine_tuning.train()
 
 fine_tuning.model.save_pretrained('/n/home09/lschrage/projects/cs109b/finetuned_model')
