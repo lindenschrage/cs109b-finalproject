@@ -117,7 +117,7 @@ val_dataset = val_dataset.map(process_inputs, batched=True)
 test_dataset = test_dataset.map(process_inputs, batched=True)
 
 train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
-val_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
+val_dataset.set_format(type='torhttps://pytorch.org/tutorials/beginner/basics/data_tutorial.htmlch', columns=['input_ids', 'attention_mask', 'labels'])
 test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
 
@@ -179,9 +179,13 @@ class DebugTrainer(SFTTrainer):
         labels = inputs.get("labels")
         
         # Print shapes and values for debugging
-        print("Inputs", inputs)
-        print(f"Logits shape: {logits.shape}, Labels shape: {labels.shape}")
-        print(f"First few logits: {logits[:5]}, First few labels: {labels[:5]}")
+        print("Labels details:")
+        print(f"Type of labels: {type(labels)}")
+        print(f"Device of labels: {labels.device}")
+        print(f"Data type of labels: {labels.dtype}")
+        print(f"Shape of labels: {labels.shape}")
+        print(f"First few labels: {labels[:5]}")  # Show the first few elements
+
         
         loss = torch.nn.functional.mse_loss(logits, labels)
         return (loss, outputs) if return_outputs else loss
