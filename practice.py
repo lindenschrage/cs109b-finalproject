@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 from torch.nn.utils.rnn import pad_sequence
 import os
 from dotenv import load_dotenv, dotenv_values 
+import wandb
 load_dotenv() 
 
 import peft
@@ -25,6 +26,7 @@ import bitsandbytes as bnb
 from transformers import BitsAndBytesConfig
 
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
+os.environ["WANDB_PROJECT"]="twitter-sentiment-analysis"
 
 url = 'dataframe.csv'
 df = pd.read_csv(url)
@@ -62,25 +64,25 @@ model = get_peft_model(llama_model, config)
 tweet_text = list(df['Tweet'])
 tweet_annotations = list(df['TweetAvgAnnotation'])
 
-y = df['TweetAvgAnnotation']
-X = df
+tweet_text = list(df['Tweet'])
+tweet_annotations = list(df['TweetAvgAnnotation'])
 
-X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size=0.2, random_state=109, stratify=X['Sentiment'])
+X_train_full, X_test, y_train_full, y_test = train_test_split(tweet_text, tweet_annotations, test_size=0.2, random_state=109, stratify=X['Sentiment'])
 
 X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, test_size=0.5, random_state=109, stratify=X_train_full['Sentiment'])
 
 df_train = pd.DataFrame({
-    "input_ids": X_train['Prompt'],
+    "input_ids": X_train['Tweet'],
     "labels": y_train
 })
 
 df_val = pd.DataFrame({
-    "input_ids": X_val['Prompt'],
+    "input_ids": X_val['Tweet'],
     "labels": y_val
 })
 
 df_test = pd.DataFrame({
-    "input_ids": X_test['Prompt'],
+    "input_ids": X_test['Tweet'],
     "labels": y_test
 })
 
@@ -127,6 +129,7 @@ training_args = TrainingArguments(
     bf16=False,
     logging_strategy="epoch",
     logging_steps=50,
+    report_to="wandb"
 )
 
 trainer = SFTTrainer(
