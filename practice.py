@@ -117,7 +117,7 @@ val_dataset = val_dataset.map(process_inputs, batched=True)
 test_dataset = test_dataset.map(process_inputs, batched=True)
 
 train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
-val_dataset.set_format(type='torhttps://pytorch.org/tutorials/beginner/basics/data_tutorial.htmlch', columns=['input_ids', 'attention_mask', 'labels'])
+val_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
 
