@@ -173,6 +173,9 @@ class DebugTrainer(SFTTrainer):
         labels = inputs.get("labels")
         
         # Print shapes and values for debugging
+        print("Inputs", inputs)
+        print("Inputs shape", inputs.shape)
+
         print(f"Logits shape: {logits.shape}, Labels shape: {labels.shape}")
         print(f"First few logits: {logits[:5]}, First few labels: {labels[:5]}")
         
