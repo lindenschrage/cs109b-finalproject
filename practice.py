@@ -122,8 +122,9 @@ test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'l
 def convert_to_fp16(batch):
     labels = torch.tensor(batch['labels'], dtype=torch.float16).unsqueeze(-1)
     batch['labels'] = labels
+    print("Input shape:", batch['input_ids'].shape)
+    print("Labels shape:", batch['labels'].shape)
     return batch
-    print(batch['labels'])
 
 train_dataset = train_dataset.map(convert_to_fp16, batched=True)
 val_dataset = val_dataset.map(convert_to_fp16, batched=True)
