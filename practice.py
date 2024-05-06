@@ -108,12 +108,16 @@ train_dataset = train_dataset.map(tokenize_function, batched=True)
 val_dataset = val_dataset.map(tokenize_function, batched=True)
 test_dataset = test_dataset.map(tokenize_function, batched=True)
 
+train_dataset = train_dataset.map(lambda examples: {'labels': examples['labels'].astype(np.float32)}, batched=True)
+val_dataset = val_dataset.map(lambda examples: {'labels': examples['labels'].astype(np.float32)}, batched=True)
+test_dataset = test_dataset.map(lambda examples: {'labels': examples['labels'].astype(np.float32)}, batched=True)
+
+
+
 train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 val_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
-train_dataset = train_dataset.map(lambda examples: {'labels': examples['labels'].float()})
-val_dataset = val_dataset.map(lambda examples: {'labels': examples['labels'].float()})
 
 
 #train_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
