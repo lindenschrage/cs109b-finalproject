@@ -115,6 +115,14 @@ train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', '
 val_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
+def convert_to_fp16(batch):
+    # Convert labels to float16 for compatibility with fp16 training
+    batch['labels'] = batch['labels'].to(torch.float16)
+    return batch
+
+# Apply conversion to the train and validation datasets
+train_dataset = train_dataset.map(convert_to_fp16, batched=True)
+val_dataset = val_dataset.map(convert_to_fp16, batched=True)
 
 
 #train_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
