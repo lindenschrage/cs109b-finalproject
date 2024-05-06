@@ -121,14 +121,6 @@ val_dataset.set_format(type='torhttps://pytorch.org/tutorials/beginner/basics/da
 test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
 
-from transformers import DataCollatorWithPadding
-
-data_collator = DataCollatorWithPadding(tokenizer=llama_tokenizer)
-
-train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, collate_fn=data_collator)
-val_loader = DataLoader(val_dataset, batch_size=1, collate_fn=data_collator)
-test_loader = DataLoader(test_dataset, batch_size=1, collate_fn=data_collator)
-
 
 
 def convert_to_fp16(batch):
@@ -141,8 +133,30 @@ def convert_to_fp16(batch):
 
 train_dataset = train_dataset.map(convert_to_fp16, batched=True)
 val_dataset = val_dataset.map(convert_to_fp16, batched=True)
+test_dataset = test_dataset.map(convert_to_fp16, batched=True)
 
-train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
+
+from transformers import DataCollatorWithPadding
+
+from torch.utils.data.dataloader import default_collate
+
+class CustomCollatorWithPadding:
+    def __init__(self, tokenizer):
+        self.data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+
+    def __call__(self, batch):
+        # Use the Hugging Face collator to handle input_ids and attention_mask
+        batch = self.data_collator(batch)
+        # Ensure labels are still float16 after collation
+        if 'labels' in batch:
+            batch['labels'] = batch['labels'].to(dtype=torch.float16)
+        return batch
+
+# Now use this custom collator for your DataLoaders
+data_collator = CustomCollatorWithPadding(tokenizer=llama_tokenizer)
+train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, collate_fn=data_collator)
+val_loader = DataLoader(val_dataset, batch_size=1, collate_fn=data_collator)
+test_loader = DataLoader(test_dataset, batch_size=1, collate_fn=data_collator)
 
 #train_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
 #val_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
@@ -180,8 +194,6 @@ class DebugTrainer(SFTTrainer):
         
         # Print shapes and values for debugging
         print("Labels details:")
-        print(f"Type of labels: {type(labels)}")
-        print(f"Device of labels: {labels.device}")
         print(f"Data type of labels: {labels.dtype}")
         print(f"Shape of labels: {labels.shape}")
         print(f"First few labels: {labels[:5]}")  # Show the first few elements
