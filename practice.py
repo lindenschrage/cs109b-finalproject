@@ -133,7 +133,7 @@ class CustomCollatorWithPadding:
             batch['labels'] = batch['labels'].to(dtype=torch.float16)
         return batch
 
-data_collator = DataCollatorWithPadding
+data_collator = DataCollatorWithPadding(tokenizer=llama_tokenizer, return_tensors="pt")
 train_loader = DataLoader(train_dataset, batch_size=5, shuffle=True, collate_fn=data_collator)
 val_loader = DataLoader(val_dataset, batch_size=5, collate_fn=data_collator)
 test_loader = DataLoader(test_dataset, batch_size=5, collate_fn=data_collator)
