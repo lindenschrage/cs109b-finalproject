@@ -189,7 +189,6 @@ train_params = TrainingArguments(
     num_train_epochs=1,
     save_steps=25,
     logging_steps=1,
-    learning_rate=2e-4,
     fp16=False,
     bf16=False,
     max_grad_norm=0.3,
