@@ -45,7 +45,6 @@ print(df.head())
 y = df['TweetAvgAnnotation']
 X = df
 
-y = np.array(y, dtype=np.float16)
 
 X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size=0.2, random_state=109, stratify=X['Sentiment'])
 
@@ -53,13 +52,10 @@ X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, te
 
 model = "meta-llama/Llama-2-7b-hf"
 
-compute_dtype = getattr(torch, "float16")
 
 bnb_config = BitsAndBytesConfig(
-    load_in_4bit=True, 
-    bnb_4bit_quant_type="nf4", 
-    bnb_4bit_compute_dtype=compute_dtype,
-    bnb_4bit_use_double_quant=True,
+    device_map="auto",
+    load_in_8bit=True
 )
 
 llama_model = LlamaForSequenceClassification.from_pretrained(
@@ -68,20 +64,17 @@ llama_model = LlamaForSequenceClassification.from_pretrained(
     quantization_config=bnb_config,
     num_labels=1,
     problem_type='regression',
-    ignore_mismatched_sizes=True,
-    torch_dtype=torch.float16,)
+    ignore_mismatched_sizes=True)
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
 
-
-
 config = LoraConfig(
-        lora_alpha=16, 
-        lora_dropout=0.1,
-        r=64,
-        bias="none",
-        target_modules="all-linear",
-        task_type="SEQ_CLS",
+    r=16,
+    lora_alpha=32,
+    target_modules=["q_proj", "v_proj"],
+    lora_dropout=0.05,
+    bias="none",
+    task_type="CAUSAL_LM",
 )
 
 llama_tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=ACCESS_TOKEN)
@@ -125,16 +118,6 @@ val_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'la
 test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
 
-def convert_to_fp16(batch):
-    labels = batch['labels'].clone().detach().to(dtype=torch.float16).unsqueeze(-1)
-    batch['labels'] = labels
-    return batch
-
-
-train_dataset = train_dataset.map(convert_to_fp16, batched=True)
-val_dataset = val_dataset.map(convert_to_fp16, batched=True)
-test_dataset = test_dataset.map(convert_to_fp16, batched=True)
-
 
 from transformers import DataCollatorWithPadding
 
@@ -150,7 +133,7 @@ class CustomCollatorWithPadding:
             batch['labels'] = batch['labels'].to(dtype=torch.float16)
         return batch
 
-data_collator = CustomCollatorWithPadding(tokenizer=llama_tokenizer)
+data_collator = DataCollatorWithPadding
 train_loader = DataLoader(train_dataset, batch_size=5, shuffle=True, collate_fn=data_collator)
 val_loader = DataLoader(val_dataset, batch_size=5, collate_fn=data_collator)
 test_loader = DataLoader(test_dataset, batch_size=5, collate_fn=data_collator)
@@ -189,7 +172,7 @@ train_params = TrainingArguments(
     num_train_epochs=1,
     save_steps=25,
     logging_steps=1,
-    fp16=True,
+    fp16=False,
     bf16=False,
     max_grad_norm=0.3,
     max_steps=-1,
