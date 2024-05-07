@@ -187,7 +187,6 @@ def compute_metrics_for_regression(eval_pred):
         'r2': r2
     }
 
-        
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
     learning_rate=2e-4,
@@ -197,16 +196,14 @@ train_params = TrainingArguments(
     fp16=True,
     weight_decay=0.01,
     num_train_epochs=2,
-    evaluation_strategy="epoch",
+    evaluation_strategy="steps",
     save_strategy="epoch",
     save_total_limit=2,
     metric_for_best_model="mse",
     load_best_model_at_end=True,
-    logging_strategy="epoch",
-    logging_steps=50,
+    logging_strategy="steps",
+    logging_steps=1,
 )
-
-
 
 trainer = SFTTrainer(
     model=model,
@@ -214,11 +211,13 @@ trainer = SFTTrainer(
     eval_dataset=val_dataset,
     tokenizer=llama_tokenizer,
     args=train_params,
-    dataset_text_field = 'input_ids',
+    dataset_text_field='input_ids',
     max_seq_length=512,
     data_collator=data_collator,
     compute_metrics=compute_metrics_for_regression
 )
+
+trainer.train()
 
 trainer.train()
 
