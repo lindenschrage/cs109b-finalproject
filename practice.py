@@ -202,7 +202,8 @@ train_params = TrainingArguments(
     load_best_model_at_end=True,
     weight_decay=0.01,
     logging_strategy="steps",
-    logging_steps=2,
+    evaluation_strategy="epoch"
+    logging_steps=1,
     eval_steps=2
 )
 
