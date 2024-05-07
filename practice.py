@@ -56,10 +56,17 @@ X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, te
 
 model = "meta-llama/Llama-2-7b-hf"
 
+nf4_config = BitsAndBytesConfig(
+   load_in_4bit=True,
+   bnb_4bit_quant_type="nf4",
+   bnb_4bit_use_double_quant=True,
+   bnb_4bit_compute_dtype=torch.bfloat16
+)optim='adamw_8bit',
+
 llama_model = LlamaForSequenceClassification.from_pretrained(
     "meta-llama/Llama-2-7b-hf",
     token=ACCESS_TOKEN,
-    quantization_config=BitsAndBytesConfig(load_in_8bit=True),
+    quantization_config=nf4_config,
     num_labels=1,
     problem_type='regression',
     ignore_mismatched_sizes=True)
@@ -69,7 +76,16 @@ llama_model.config.pretraining_tp = 1
 llama = prepare_model_for_kbit_training(llama_model)
 
 config = LoraConfig(
-    r=16, lora_alpha=32, target_modules=["q_proj", "v_proj"], lora_dropout=0.05, bias="none"
+    r=32, lora_alpha=64, target_modules=[
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj",
+        "lm_head",
+    ], lora_dropout=0.05, bias="none"
 )
 
 llama_tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=ACCESS_TOKEN)
@@ -113,7 +129,6 @@ val_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'la
 test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
 
-
 def convert_to_fp16(batch):
     labels = batch['labels'].clone().detach().to(dtype=torch.float16).unsqueeze(-1)
     batch['labels'] = labels
@@ -143,11 +158,6 @@ data_collator = CustomCollatorWithPadding(tokenizer=llama_tokenizer)
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=data_collator)
 val_loader = DataLoader(val_dataset, batch_size=32, collate_fn=data_collator)
 test_loader = DataLoader(test_dataset, batch_size=32, collate_fn=data_collator)
-
-
-#train_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
-#val_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
-#test_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-test-dataset')
 
 def compute_metrics_for_regression(eval_pred):
     predictions, labels = eval_pred
