@@ -83,8 +83,7 @@ config = LoraConfig(
         "o_proj",
         "gate_proj",
         "up_proj",
-        "down_proj",
-        "lm_head",
+        "down_proj"
     ], lora_dropout=0.05, bias="none"
 )
 
@@ -172,7 +171,7 @@ def compute_metrics_for_regression(eval_pred):
 
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
-    learning_rate=2e-3,
+    learning_rate=2e-4,
     per_device_train_batch_size=32,
     per_device_eval_batch_size=32,
     num_train_epochs=1,
