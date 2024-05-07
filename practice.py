@@ -42,7 +42,6 @@ ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 
 url = 'dataframe.csv'
 df = pd.read_csv(url)
-print(df.head())
 
 y = df['TweetAvgAnnotation']
 X = df
@@ -188,6 +187,7 @@ def compute_metrics_for_regression(eval_pred):
         'r2': r2
     }
 
+        
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
     learning_rate=2e-4,
@@ -200,7 +200,8 @@ train_params = TrainingArguments(
     logging_steps=1,
     eval_steps=1,
     metric_for_best_model="mse",
-    optim='adamw_8bit'
+    optim='adamw_8bit',
+    evaluation_strategy="steps"
 )
 
 
