@@ -154,9 +154,34 @@ class CustomCollatorWithPadding:
         return batch
 
 data_collator = CustomCollatorWithPadding(tokenizer=llama_tokenizer)
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=data_collator)
-val_loader = DataLoader(val_dataset, batch_size=32, collate_fn=data_collator)
-test_loader = DataLoader(test_dataset, batch_size=32, collate_fn=data_collator)
+train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True, collate_fn=data_collator)
+val_loader = DataLoader(val_dataset, batch_size=16, collate_fn=data_collator)
+test_loader = DataLoader(test_dataset, batch_size=16, collate_fn=data_collator)
+
+def plot_predictions_vs_actual_finetune(model, test_dataset, path):
+    test_loader = DataLoader(test_dataset, batch_size=16, collate_fn=data_collator)
+    true_labels = [item['labels'].item() for item in test_dataset]
+    predicted_scores = []
+    model.eval()
+    with torch.no_grad():
+        for batch in test_loader:
+            input_ids = batch['input_ids']
+            attention_mask = batch['attention_mask']
+            outputs = model(input_ids, attention_mask=attention_mask)
+            batch_scores = outputs.logits.squeeze().tolist()
+            if isinstance(batch_scores, float):
+                batch_scores = [batch_scores]
+            predicted_scores.extend(batch_scores)
+
+    plt.figure(figsize=(10, 5))
+    plt.scatter(true_labels, predicted_scores, alpha=0.5)
+    plt.plot([min(true_labels), max(true_labels)], [min(true_labels), max(true_labels)], 'r--')
+    plt.title('Actual vs Predicted Sentiment Scores')
+    plt.xlabel('Actual Scores')
+    plt.ylabel('Predicted Scores')
+    plt.grid(True)
+    plt.savefig(path)
+plot_predictions_vs_actual_finetune(model, test_dataset, 'BASELINE-FINETUNE-llama-actual-vs-predicted.png')
 
 def compute_metrics_for_regression(eval_pred):
     predictions, labels = eval_pred
@@ -172,11 +197,11 @@ def compute_metrics_for_regression(eval_pred):
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
     learning_rate=2e-4,
-    per_device_train_batch_size=32,
-    per_device_eval_batch_size=32,
+    per_device_train_batch_size=16,
+    per_device_eval_batch_size=16,
     num_train_epochs=1,
     warmup_steps=100,
-    max_steps=200,
+    max_steps=250,
     fp16=True,
     report_to="wandb",
     logging_steps=1,
@@ -185,7 +210,7 @@ train_params = TrainingArguments(
     )
 
 
-fine_tuning = SFTTrainer(
+trainer = SFTTrainer(
     model=model,
     train_dataset=train_dataset,
     eval_dataset=val_dataset,
@@ -197,48 +222,49 @@ fine_tuning = SFTTrainer(
     compute_metrics=compute_metrics_for_regression
 )
 
-fine_tuning.train()
+trainer.train()
 
-fine_tuning.model.save_pretrained('/n/home09/lschrage/projects/cs109b/finetuned_model')
-
-
-'''
-import torch
-import torch.nn.functional as F
-
-class CustomLoss(torch.nn.Module):
-    def __init__(self, allowed_token_ids):
-        super().__init__()
-        self.allowed_token_ids = allowed_token_ids
-
-    def forward(self, predictions, labels):
-        loss = F.cross_entropy(predictions, labels, reduction='none')
-
-        penalty_mask = ~labels.unsqueeze(-1).isin(self.allowed_token_ids)
-        penalties = penalty_mask.float() * 10.0  # Arbitrary high penalty
-        loss += penalties.sum(-1)
-
-        return loss.mean()
+trainer.model.save_pretrained('/n/home09/lschrage/projects/cs109b/finetuned_model')
 
 
+def plot_predictions_vs_actual_finetune(model, test_dataset, path):
+    test_loader = DataLoader(test_dataset, batch_size=32, collate_fn=collate_fn)
+    true_labels = [item['labels'].item() for item in test_dataset]
+    predicted_scores = []
+    model.eval()
+    with torch.no_grad():
+        for batch in test_loader:
+            input_ids = batch['input_ids'].to('cuda')
+            attention_mask = batch['attention_mask'].to('cuda')
+            outputs = model(input_ids, attention_mask=attention_mask)
+            batch_scores = outputs.logits.squeeze().tolist()
+            if isinstance(batch_scores, float):
+                batch_scores = [batch_scores]
+            predicted_scores.extend(batch_scores)
 
-class CustomTrainer(Trainer):
-    def compute_loss(self, model, inputs, return_outputs=False):
-        labels = inputs.pop("labels")
-        outputs = model(**inputs)
-        logits = outputs.logits
-        loss = custom_loss(logits, labels)
-        return (loss, outputs) if return_outputs else loss
+    plt.figure(figsize=(10, 5))
+    plt.scatter(true_labels, predicted_scores, alpha=0.5)
+    plt.plot([min(true_labels), max(true_labels)], [min(true_labels), max(true_labels)], 'r--')
+    plt.title('Actual vs Predicted Sentiment Scores')
+    plt.xlabel('Actual Scores')
+    plt.ylabel('Predicted Scores')
+    plt.grid(True)
+    plt.savefig(path)
+plot_predictions_vs_actual_finetune(trainer.model, test_dataset, 'FINETUNE-llama-actual-vs-predicted.png')
 
-allowed_token_ids = tokenizer.convert_tokens_to_ids(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '-'])
-custom_loss = CustomLoss(allowed_token_ids)
+history = pd.DataFrame(trainer.state.log_history)
+train_loss = history['loss'].dropna()
+val_loss = history['eval_loss'].dropna()
 
-trainer = CustomTrainer(
-    model=llama_model,
-    args=train_params,
-    train_dataset=train_dataset,
-    tokenizer=llama_tokenizer,
-    compute_loss=custom_loss
-)
-
-'''
+def plot_train_val_loss(train_loss, val_loss, path):
+    epochs = range(1, len(train_loss) + 1)
+    plt.figure(figsize=(10, 5))
+    plt.plot(epochs, train_loss, label='Training MSE')
+    plt.plot(epochs, val_loss, label='Validation MSE')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation MSE')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(path)
+plot_train_val_loss(train_loss, val_loss, 'FINETUNE-llama-train-val-mse.png')
