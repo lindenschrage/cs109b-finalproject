@@ -61,8 +61,7 @@ llama_model = LlamaForSequenceClassification.from_pretrained(
     quantization_config=BitsAndBytesConfig(load_in_8bit=True),
     num_labels=1,
     problem_type='regression',
-    ignore_mismatched_sizes=True,
-    torch_dtype=torch.float16,)
+    ignore_mismatched_sizes=True)
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
 
@@ -112,8 +111,8 @@ train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', '
 val_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
-''''
 
+'''
 def convert_to_fp16(batch):
     labels = batch['labels'].clone().detach().to(dtype=torch.float16).unsqueeze(-1)
     batch['labels'] = labels
@@ -123,7 +122,6 @@ def convert_to_fp16(batch):
 train_dataset = train_dataset.map(convert_to_fp16, batched=True)
 val_dataset = val_dataset.map(convert_to_fp16, batched=True)
 test_dataset = test_dataset.map(convert_to_fp16, batched=True)
-
 '''
 
 from transformers import DataCollatorWithPadding
@@ -137,7 +135,7 @@ class CustomCollatorWithPadding:
     def __call__(self, batch):
         batch = self.data_collator(batch)
         if 'labels' in batch:
-            batch['labels'] = batch['labels'].to(dtype=torch.float32)
+            batch['labels'] = batch['labels'].to(dtype=torch.float16)
         return batch
 
 data_collator = CustomCollatorWithPadding(tokenizer=llama_tokenizer)
@@ -163,7 +161,7 @@ def compute_metrics_for_regression(eval_pred):
 
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
-    learning_rate=2e-6,
+    learning_rate=2e-8,
     per_device_train_batch_size=32,
     per_device_eval_batch_size=32,
     num_train_epochs=1,
