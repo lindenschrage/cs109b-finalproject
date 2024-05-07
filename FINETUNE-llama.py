@@ -141,8 +141,8 @@ test_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalprojec
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
     num_train_epochs=1,
-    per_device_train_batch_size=6,
-    gradient_accumulation_steps=2,
+    per_device_train_batch_size=4,
+    gradient_accumulation_steps=4,
     save_steps=25,
     logging_steps=1,
     learning_rate=2e-4,
