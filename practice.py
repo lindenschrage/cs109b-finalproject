@@ -66,7 +66,7 @@ llama_model = LlamaForSequenceClassification.from_pretrained(
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
 
-llama = prepare_model_for_kbit_training(model)
+llama = prepare_model_for_kbit_training(llama_model)
 
 config = LoraConfig(
     r=16, lora_alpha=32, target_modules=["q_proj", "v_proj"], lora_dropout=0.05, bias="none"
