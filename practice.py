@@ -183,13 +183,13 @@ def compute_metrics_for_regression(eval_pred):
 
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
-    learning_rate=2e-5,
+    learning_rate=2e-2,
     per_device_train_batch_size=1,
     per_device_eval_batch_size=1,
     num_train_epochs=1,
     save_steps=25,
     logging_steps=1,
-    fp16=False,
+    fp16=True,
     bf16=False,
     max_grad_norm=0.3,
     max_steps=-1,
