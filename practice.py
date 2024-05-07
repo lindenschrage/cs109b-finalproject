@@ -61,7 +61,7 @@ nf4_config = BitsAndBytesConfig(
    bnb_4bit_quant_type="nf4",
    bnb_4bit_use_double_quant=True,
    bnb_4bit_compute_dtype=torch.bfloat16
-)optim='adamw_8bit',
+)
 
 llama_model = LlamaForSequenceClassification.from_pretrained(
     "meta-llama/Llama-2-7b-hf",
@@ -181,7 +181,8 @@ train_params = TrainingArguments(
     fp16=True,
     report_to="wandb",
     logging_steps=1,
-    metric_for_best_model="mse"
+    metric_for_best_model="mse",
+    optim='adamw_8bit',
     )
 
 
