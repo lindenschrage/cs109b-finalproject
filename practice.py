@@ -198,9 +198,10 @@ train_params = TrainingArguments(
     fp16=True,
     report_to="wandb",
     logging_steps=1,
+    eval_steps=1,
     metric_for_best_model="mse",
     optim='adamw_8bit'
-    )
+)
 
 
 trainer = SFTTrainer(
