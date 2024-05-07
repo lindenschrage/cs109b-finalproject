@@ -138,3 +138,56 @@ val_mse = evaluate_model(val_loader)
 
 print(f'Validation MSE: {val_mse}')
 print(f'Test MSE: {test_mse}')
+
+
+####
+
+def plot_predictions_vs_actual_finetune(model, dataset, path):
+    # Assuming the dataset is a Huggingface Dataset object and directly accessible
+    true_labels = dataset['labels']
+    predicted_scores = []
+    
+    # Set the model to evaluation mode
+    model.eval()
+    
+    # Disable gradient calculation for inference
+    with torch.no_grad():
+        # Loop through the entire dataset for prediction
+        for item in dataset:
+            input_ids = torch.tensor(item['input_ids']).unsqueeze(0).to('cuda')
+            attention_mask = torch.tensor(item['attention_mask']).unsqueeze(0).to('cuda')
+            
+            # Get the model output
+            outputs = model(input_ids, attention_mask=attention_mask)
+            score = outputs.logits.squeeze().item()
+            predicted_scores.append(score)
+    
+    # Plot the true labels vs. predicted scores
+    plt.figure(figsize=(10, 5))
+    plt.scatter(true_labels, predicted_scores, alpha=0.5)
+    plt.plot([min(true_labels), max(true_labels)], [min(true_labels), max(true_labels)], 'r--')
+    plt.title('Actual vs Predicted Sentiment Scores')
+    plt.xlabel('Actual Scores')
+    plt.ylabel('Predicted Scores')
+    plt.grid(True)
+    plt.savefig(path)
+plot_predictions_vs_actual_finetune(trainer.model, test_dataset, 'FINETUNE-llama-actual-vs-predicted.png')
+
+history = pd.DataFrame(trainer.state.log_history)
+print(history.columns)
+train_loss = history['loss'].dropna()
+val_loss = history['eval_loss'].dropna()
+
+def plot_train_val_loss(train_loss, val_loss, path):
+    # Assuming train_loss and val_loss are directly passed lists
+    epochs = range(1, len(train_loss) + 1)
+    plt.figure(figsize=(10, 5))
+    plt.plot(epochs, train_loss, label='Training MSE')
+    plt.plot(epochs, val_loss, label='Validation MSE')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation MSE')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(path)
+plot_train_val_loss(train_loss, val_loss, 'FINETUNE-llama-train-val-mse.png')
