@@ -76,7 +76,7 @@ llama_model.config.pretraining_tp = 1
 llama = prepare_model_for_kbit_training(llama_model)
 
 config = LoraConfig(
-    r=32, lora_alpha=64, target_modules=[
+    r=64, lora_alpha=64, target_modules=[
         "q_proj",
         "k_proj",
         "v_proj",
@@ -172,7 +172,7 @@ def compute_metrics_for_regression(eval_pred):
 
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
-    learning_rate=2e-8,
+    learning_rate=2e-3,
     per_device_train_batch_size=32,
     per_device_eval_batch_size=32,
     num_train_epochs=1,
