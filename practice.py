@@ -193,19 +193,20 @@ train_params = TrainingArguments(
     learning_rate=2e-4,
     per_device_train_batch_size=32,
     per_device_eval_batch_size=32,
-    max_steps=250,
     warmup_steps=50,
     fp16=True,
-    report_to="wandb",
-    save_strategy="steps",
+    metric_for_best_model="mse",
+    weight_decay=0.01,
+    num_train_epochs=2,
+    evaluation_strategy="epoch",
+    save_strategy="epoch",
+    save_total_limit=2,
     metric_for_best_model="mse",
     load_best_model_at_end=True,
-    weight_decay=0.01,
-    logging_strategy="steps",
-    evaluation_strategy="epoch"
-    logging_steps=1,
-    eval_steps=2
+    logging_strategy="epoch",
+    logging_steps=50,
 )
+
 
 
 trainer = SFTTrainer(
