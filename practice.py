@@ -155,7 +155,7 @@ train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, collate_fn=
 val_loader = DataLoader(val_dataset, batch_size=1, collate_fn=data_collator)
 test_loader = DataLoader(test_dataset, batch_size=1, collate_fn=data_collator)
 
-for batch in val_loader:
+for batch in val_loader[:5]:
     with torch.no_grad():
         outputs = model(batch['input_ids'], attention_mask=batch['attention_mask'])
     predictions = outputs.logits.squeeze().detach().numpy()
@@ -164,7 +164,7 @@ for batch in val_loader:
     print("Actuals:", actuals)
     mse = np.mean((predictions - actuals) ** 2)
     print("Calculated MSE:", mse)
-    break
+    
 
 #train_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
 #val_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
