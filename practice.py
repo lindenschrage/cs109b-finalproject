@@ -62,7 +62,8 @@ llama_model = LlamaForSequenceClassification.from_pretrained(
     quantization_config=BitsAndBytesConfig(load_in_8bit=True),
     num_labels=1,
     problem_type='regression',
-    ignore_mismatched_sizes=True)
+    ignore_mismatched_sizes=True,
+    dtype = torch.float16)
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
 
@@ -113,7 +114,7 @@ val_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'la
 test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
 
-'''
+
 def convert_to_fp16(batch):
     labels = batch['labels'].clone().detach().to(dtype=torch.float16).unsqueeze(-1)
     batch['labels'] = labels
@@ -123,7 +124,7 @@ def convert_to_fp16(batch):
 train_dataset = train_dataset.map(convert_to_fp16, batched=True)
 val_dataset = val_dataset.map(convert_to_fp16, batched=True)
 test_dataset = test_dataset.map(convert_to_fp16, batched=True)
-'''
+
 
 from transformers import DataCollatorWithPadding
 
