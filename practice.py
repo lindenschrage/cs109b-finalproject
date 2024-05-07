@@ -31,8 +31,10 @@ from datasets import load_from_disk
 import accelerate
 from peft import LoraConfig, get_peft_model 
 import os
+from peft import prepare_model_for_kbit_training
 from dotenv import load_dotenv, dotenv_values 
 load_dotenv() 
+
 
 os.environ["WANDB_PROJECT"]="twitter-sentiment-analysis"
 
@@ -53,19 +55,10 @@ X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, te
 
 model = "meta-llama/Llama-2-7b-hf"
 
-compute_dtype = getattr(torch, "float16")
-
-bnb_config = BitsAndBytesConfig(
-    load_in_4bit=True, 
-    bnb_4bit_quant_type="nf4", 
-    bnb_4bit_compute_dtype=compute_dtype,
-    bnb_4bit_use_double_quant=True,
-)
-
 llama_model = LlamaForSequenceClassification.from_pretrained(
     "meta-llama/Llama-2-7b-hf",
     token=ACCESS_TOKEN,
-    quantization_config=bnb_config,
+    quantization_config=BitsAndBytesConfig(load_in_8bit=True),
     num_labels=1,
     problem_type='regression',
     ignore_mismatched_sizes=True,
@@ -73,21 +66,16 @@ llama_model = LlamaForSequenceClassification.from_pretrained(
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
 
-
+llama = prepare_model_for_kbit_training(model)
 
 config = LoraConfig(
-        lora_alpha=16, 
-        lora_dropout=0.1,
-        r=64,
-        bias="none",
-        target_modules="all-linear",
-        task_type="SEQ_CLS",
+    r=16, lora_alpha=32, target_modules=["q_proj", "v_proj"], lora_dropout=0.05, bias="none"
 )
 
 llama_tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=ACCESS_TOKEN)
 llama_tokenizer.pad_token = llama_tokenizer.eos_token 
 
-model = get_peft_model(llama_model, config)
+model = get_peft_model(llama, config)
 model.config.pad_token_id = llama_tokenizer.pad_token_id
 
 df_train = pd.DataFrame({
@@ -155,16 +143,6 @@ train_loader = DataLoader(train_dataset, batch_size=5, shuffle=True, collate_fn=
 val_loader = DataLoader(val_dataset, batch_size=5, collate_fn=data_collator)
 test_loader = DataLoader(test_dataset, batch_size=5, collate_fn=data_collator)
 
-for batch in val_loader:
-    with torch.no_grad():
-        outputs = model(batch['input_ids'], attention_mask=batch['attention_mask'])
-    predictions = outputs.logits.squeeze().detach().numpy()
-    actuals = batch['labels'].squeeze().detach().numpy()
-    print("Predictions:", predictions)
-    print("Actuals:", actuals)
-    mse = np.mean((predictions - actuals) ** 2)
-    print("Calculated MSE:", mse)
-    
 
 #train_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
 #val_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
@@ -189,8 +167,8 @@ train_params = TrainingArguments(
     num_train_epochs=1,
     save_steps=25,
     logging_steps=1,
-    fp16=False,
-    bf16=True,
+    fp16=True,
+    bf16=False,
     max_grad_norm=0.3,
     max_steps=-1,
     warmup_ratio=0.03,
