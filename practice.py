@@ -197,11 +197,15 @@ train_params = TrainingArguments(
     warmup_steps=50,
     fp16=True,
     report_to="wandb",
-    logging_steps=1,
-    eval_steps=1,
+    evaluation_strategy="steps",
+    save_strategy="steps",
+    save_total_limit=2,
     metric_for_best_model="mse",
-    optim='adamw_8bit',
-    evaluation_strategy="steps"
+    load_best_model_at_end=True,
+    weight_decay=0.01,
+    logging_strategy="epoch",
+    logging_steps=10,
+    eval_steps=10
 )
 
 
