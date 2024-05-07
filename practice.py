@@ -200,7 +200,6 @@ train_params = TrainingArguments(
     evaluation_strategy="steps",
     eval_steps=2000,
     metric_for_best_model="mse",
-    load_best_model_at_end=True,
     weight_decay=0.01,
     )
 
