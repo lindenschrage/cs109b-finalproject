@@ -195,7 +195,6 @@ train_params = TrainingArguments(
     per_device_eval_batch_size=32,
     warmup_steps=50,
     fp16=True,
-    metric_for_best_model="mse",
     weight_decay=0.01,
     num_train_epochs=2,
     evaluation_strategy="epoch",
