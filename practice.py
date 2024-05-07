@@ -47,7 +47,7 @@ print(df.head())
 y = df['TweetAvgAnnotation']
 X = df
 
-y = np.array(y, dtype=np.float16)
+#y = np.array(y, dtype=np.float16)
 
 X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size=0.2, random_state=109, stratify=X['Sentiment'])
 
@@ -112,6 +112,7 @@ train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', '
 val_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
+''''
 
 def convert_to_fp16(batch):
     labels = batch['labels'].clone().detach().to(dtype=torch.float16).unsqueeze(-1)
@@ -123,6 +124,7 @@ train_dataset = train_dataset.map(convert_to_fp16, batched=True)
 val_dataset = val_dataset.map(convert_to_fp16, batched=True)
 test_dataset = test_dataset.map(convert_to_fp16, batched=True)
 
+'''
 
 from transformers import DataCollatorWithPadding
 
@@ -135,13 +137,13 @@ class CustomCollatorWithPadding:
     def __call__(self, batch):
         batch = self.data_collator(batch)
         if 'labels' in batch:
-            batch['labels'] = batch['labels'].to(dtype=torch.float16)
+            batch['labels'] = batch['labels'].to(dtype=torch.float32)
         return batch
 
 data_collator = CustomCollatorWithPadding(tokenizer=llama_tokenizer)
-train_loader = DataLoader(train_dataset, batch_size=5, shuffle=True, collate_fn=data_collator)
-val_loader = DataLoader(val_dataset, batch_size=5, collate_fn=data_collator)
-test_loader = DataLoader(test_dataset, batch_size=5, collate_fn=data_collator)
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=data_collator)
+val_loader = DataLoader(val_dataset, batch_size=32, collate_fn=data_collator)
+test_loader = DataLoader(test_dataset, batch_size=32, collate_fn=data_collator)
 
 
 #train_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
@@ -161,24 +163,16 @@ def compute_metrics_for_regression(eval_pred):
 
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
-    learning_rate=2e-5,
-    per_device_train_batch_size=5,
-    per_device_eval_batch_size=1,
+    learning_rate=2e-6,
+    per_device_train_batch_size=32,
+    per_device_eval_batch_size=32,
     num_train_epochs=1,
-    save_steps=25,
-    logging_steps=1,
+    warmup_steps=100,
+    max_steps=200,
     fp16=True,
-    bf16=False,
-    max_grad_norm=0.3,
-    max_steps=-1,
-    warmup_ratio=0.03,
-    group_by_length=True,
-    lr_scheduler_type="linear",
     report_to="wandb",
-    evaluation_strategy="steps",
-    eval_steps=2000,
-    metric_for_best_model="mse",
-    weight_decay=0.01,
+    logging_steps=1,
+    metric_for_best_model="mse"
     )
 
 
