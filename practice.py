@@ -53,27 +53,6 @@ X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size=0.
 
 X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, test_size=0.2, random_state=109, stratify=X_train_full['Sentiment'])
 
-def generate_train_prompt(tweet):
-  return f"""
-          Analyze the sentiment of the tweet enclosed in square brackets,
-          determine if it is optimistic, neutral, or pessamistic, and return the answer as a float value rounded to two decimal places
-          between -3 (corresponding to a  negative sentiment) and 3 (corresponding to a positive sentiment).
-
-          [{tweet["Tweet"]}] = {tweet["TweetAvgAnnotation"]}
-          """.strip()
-def generate_test_prompt(tweet):
-  return f"""
-          Analyze the sentiment of the tweet enclosed in square brackets,
-          determine if it is positive, neutral, or negative, and return the answer as a float value rounded to two decimal places
-          between -3 (corresponding to a  negative sentiment) and 3 (corresponding to a positive sentiment).
-
-          [{tweet["Tweet"]}] =
-          """.strip()
-
-X_train_full['Prompt'] = X_train_full.apply(generate_train_prompt, axis=1)
-X_train['Prompt'] = X_train.apply(generate_test_prompt, axis=1)
-X_test['Prompt'] = X_test.apply(generate_test_prompt, axis=1)
-X_val['Prompt'] = X_val.apply(generate_test_prompt, axis=1)
 
 model = "meta-llama/Llama-2-7b-hf"
 
@@ -100,17 +79,17 @@ model = get_peft_model(llama, config)
 model.config.pad_token_id = llama_tokenizer.pad_token_id
 
 df_train = pd.DataFrame({
-    "input_ids": X_train['Prompt'],
+    "input_ids": X_train['Tweet'],
     "labels": y_train
 })
 
 df_val = pd.DataFrame({
-    "input_ids": X_val['Prompt'],
+    "input_ids": X_val['Tweet'],
     "labels": y_val
 })
 
 df_test = pd.DataFrame({
-    "input_ids": X_test['Prompt'],
+    "input_ids": X_test['Tweet'],
     "labels": y_test
 })
 
@@ -183,7 +162,7 @@ def compute_metrics_for_regression(eval_pred):
 
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
-    learning_rate=2e-5,
+    learning_rate=2e-8,
     per_device_train_batch_size=32,
     per_device_eval_batch_size=32,
     num_train_epochs=1,
