@@ -199,14 +199,13 @@ train_params = TrainingArguments(
     learning_rate=2e-4,
     per_device_train_batch_size=16,
     per_device_eval_batch_size=16,
-    num_train_epochs=1,
-    warmup_steps=100,
-    max_steps=250,
+    num_train_epochs=2,
+    warmup_steps=50,
     fp16=True,
     report_to="wandb",
     logging_steps=1,
     metric_for_best_model="mse",
-    optim='adamw_8bit',
+    optim='adamw_8bit'
     )
 
 
@@ -226,9 +225,13 @@ trainer.train()
 
 trainer.model.save_pretrained('/n/home09/lschrage/projects/cs109b/finetuned_model')
 
+history = pd.DataFrame(trainer.state.log_history)
+print(history)
+train_loss = history['loss'].dropna()
+val_loss = history['eval_loss'].dropna()
 
 def plot_predictions_vs_actual_finetune(model, test_dataset, path):
-    test_loader = DataLoader(test_dataset, batch_size=32, collate_fn=collate_fn)
+    test_loader = DataLoader(test_dataset, batch_size=32, collate_fn=data_collator)
     true_labels = [item['labels'].item() for item in test_dataset]
     predicted_scores = []
     model.eval()
@@ -252,9 +255,7 @@ def plot_predictions_vs_actual_finetune(model, test_dataset, path):
     plt.savefig(path)
 plot_predictions_vs_actual_finetune(trainer.model, test_dataset, 'FINETUNE-llama-actual-vs-predicted.png')
 
-history = pd.DataFrame(trainer.state.log_history)
-train_loss = history['loss'].dropna()
-val_loss = history['eval_loss'].dropna()
+
 
 def plot_train_val_loss(train_loss, val_loss, path):
     epochs = range(1, len(train_loss) + 1)
