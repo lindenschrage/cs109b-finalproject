@@ -155,7 +155,7 @@ train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, collate_fn=
 val_loader = DataLoader(val_dataset, batch_size=1, collate_fn=data_collator)
 test_loader = DataLoader(test_dataset, batch_size=1, collate_fn=data_collator)
 
-for batch in val_loader[:5]:
+for batch in val_loader:
     with torch.no_grad():
         outputs = model(batch['input_ids'], attention_mask=batch['attention_mask'])
     predictions = outputs.logits.squeeze().detach().numpy()
