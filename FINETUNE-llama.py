@@ -159,7 +159,7 @@ train_params = TrainingArguments(
     eval_steps=2000
 )
 
-fine_tuning = SFTTrainer(
+trainer = SFTTrainer(
     model=model,
     train_dataset=train_dataset,
     eval_dataset=val_dataset,
@@ -168,48 +168,53 @@ fine_tuning = SFTTrainer(
     dataset_text_field = 'input_ids'
 )
 
-fine_tuning.train()
+trainer.train()
 
-fine_tuning.model.save_pretrained('/n/home09/lschrage/projects/cs109b/finetuned_model')
+def plot_predictions_vs_actual_finetune(model, dataset, path):
+    # Assuming the dataset is a Huggingface Dataset object and directly accessible
+    true_labels = dataset['labels']
+    predicted_scores = []
+    
+    # Set the model to evaluation mode
+    model.eval()
+    
+    # Disable gradient calculation for inference
+    with torch.no_grad():
+        # Loop through the entire dataset for prediction
+        for item in dataset:
+            input_ids = torch.tensor(item['input_ids']).unsqueeze(0).to('cuda')
+            attention_mask = torch.tensor(item['attention_mask']).unsqueeze(0).to('cuda')
+            
+            # Get the model output
+            outputs = model(input_ids, attention_mask=attention_mask)
+            score = outputs.logits.squeeze().item()
+            predicted_scores.append(score)
+    
+    # Plot the true labels vs. predicted scores
+    plt.figure(figsize=(10, 5))
+    plt.scatter(true_labels, predicted_scores, alpha=0.5)
+    plt.plot([min(true_labels), max(true_labels)], [min(true_labels), max(true_labels)], 'r--')
+    plt.title('Actual vs Predicted Sentiment Scores')
+    plt.xlabel('Actual Scores')
+    plt.ylabel('Predicted Scores')
+    plt.grid(True)
+    plt.savefig(path)
+plot_predictions_vs_actual_finetune(trainer.model, test_dataset, 'FINETUNE-llama-actual-vs-predicted.png')
 
+history = pd.DataFrame(trainer.state.log_history)
+train_loss = history['loss'].dropna()
+val_loss = history['eval_loss'].dropna()
 
-'''
-import torch
-import torch.nn.functional as F
-
-class CustomLoss(torch.nn.Module):
-    def __init__(self, allowed_token_ids):
-        super().__init__()
-        self.allowed_token_ids = allowed_token_ids
-
-    def forward(self, predictions, labels):
-        loss = F.cross_entropy(predictions, labels, reduction='none')
-
-        penalty_mask = ~labels.unsqueeze(-1).isin(self.allowed_token_ids)
-        penalties = penalty_mask.float() * 10.0  # Arbitrary high penalty
-        loss += penalties.sum(-1)
-
-        return loss.mean()
-
-
-
-class CustomTrainer(Trainer):
-    def compute_loss(self, model, inputs, return_outputs=False):
-        labels = inputs.pop("labels")
-        outputs = model(**inputs)
-        logits = outputs.logits
-        loss = custom_loss(logits, labels)
-        return (loss, outputs) if return_outputs else loss
-
-allowed_token_ids = tokenizer.convert_tokens_to_ids(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '-'])
-custom_loss = CustomLoss(allowed_token_ids)
-
-trainer = CustomTrainer(
-    model=llama_model,
-    args=train_params,
-    train_dataset=train_dataset,
-    tokenizer=llama_tokenizer,
-    compute_loss=custom_loss
-)
-
-'''
+def plot_train_val_loss(train_loss, val_loss, path):
+    # Assuming train_loss and val_loss are directly passed lists
+    epochs = range(1, len(train_loss) + 1)
+    plt.figure(figsize=(10, 5))
+    plt.plot(epochs, train_loss, label='Training MSE')
+    plt.plot(epochs, val_loss, label='Validation MSE')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation MSE')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(path)
+plot_train_val_loss(train_loss, val_loss, 'FINETUNE-llama-train-val-mse.png')
