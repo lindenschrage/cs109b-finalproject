@@ -23,7 +23,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from trl import SFTTrainer
 from datasets import Dataset
 import wandb
+from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
+from sklearn.metrics import r2_score
 from datasets import DatasetInfo, Features, Value
 from datasets import load_from_disk
 import accelerate
@@ -155,28 +157,37 @@ test_loader = DataLoader(test_dataset, batch_size=1, collate_fn=data_collator)
 #val_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
 #test_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-test-dataset')
 
+def compute_metrics_for_regression(eval_pred):
+    predictions, labels = eval_pred
+    mse = mean_squared_error(labels, predictions)
+    mae = mean_absolute_error(labels, predictions)
+    r2 = r2_score(labels, predictions)
+    return {
+        'mse': mse,
+        'mae': mae,
+        'r2': r2
+    }
+
+BATCH_SIZE = 32
+LEARNING_RATE = 2e-5
+EPOCHS = 1
+
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
-    num_train_epochs=1,
-    per_device_train_batch_size=1,
-    gradient_accumulation_steps=2,
-    save_steps=25,
-    logging_steps=1,
-    learning_rate=2e-4,
-    weight_decay=0.001,
-    fp16=False,
-    bf16=False,
-    max_grad_norm=0.3,
-    max_steps=-1,
-    warmup_ratio=0.03,
-    group_by_length=True,
+    learning_rate=LEARNING_RATE,
+    per_device_train_batch_size=BATCH_SIZE,
+    per_device_eval_batch_size=BATCH_SIZE,
+    num_train_epochs=EPOCHS,
+    evaluation_strategy="epoch",
+    save_strategy="epoch",
+    save_total_limit=2,
     metric_for_best_model="mse",
-    lr_scheduler_type="linear",
-    report_to="wandb",
-    evaluation_strategy="steps",
-    eval_steps=2000
-
+    load_best_model_at_end=True,
+    weight_decay=0.01,
+    logging_strategy="epoch",
+    logging_steps=50,
 )
+
 
 fine_tuning = SFTTrainer(
     model=model,
@@ -186,7 +197,8 @@ fine_tuning = SFTTrainer(
     args=train_params,
     dataset_text_field = 'input_ids',
     max_seq_length=512,
-    data_collator=data_collator
+    data_collator=data_collator,
+    compute_metrics=compute_metrics_for_regression,
 )
 
 fine_tuning.train()
