@@ -47,8 +47,6 @@ print(df.head())
 y = df['TweetAvgAnnotation']
 X = df
 
-#y = np.array(y, dtype=np.float16)
-
 X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size=0.2, random_state=109, stratify=X['Sentiment'])
 
 X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, test_size=0.2, random_state=109, stratify=X_train_full['Sentiment'])
@@ -113,9 +111,7 @@ val_dataset = Dataset.from_pandas(df_val)
 test_dataset = Dataset.from_pandas(df_test)
 
 def process_inputs(example):
-    # Tokenize the inputs
     result = llama_tokenizer(example['input_ids'])
-    # Make sure labels are maintained as scalars
     result['labels'] = example['labels']
     return result
 
@@ -141,8 +137,6 @@ test_dataset = test_dataset.map(convert_to_fp16, batched=True)
 
 from transformers import DataCollatorWithPadding
 
-from torch.utils.data.dataloader import default_collate
-
 class CustomCollatorWithPadding:
     def __init__(self, tokenizer):
         self.data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
@@ -154,12 +148,12 @@ class CustomCollatorWithPadding:
         return batch
 
 data_collator = CustomCollatorWithPadding(tokenizer=llama_tokenizer)
-train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True, collate_fn=data_collator)
-val_loader = DataLoader(val_dataset, batch_size=16, collate_fn=data_collator)
-test_loader = DataLoader(test_dataset, batch_size=16, collate_fn=data_collator)
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=data_collator)
+val_loader = DataLoader(val_dataset, batch_size=32, collate_fn=data_collator)
+test_loader = DataLoader(test_dataset, batch_size=32, collate_fn=data_collator)
 
 def plot_predictions_vs_actual_finetune(model, test_dataset, path):
-    test_loader = DataLoader(test_dataset, batch_size=16, collate_fn=data_collator)
+    test_loader = DataLoader(test_dataset, batch_size=32, collate_fn=data_collator)
     true_labels = [item['labels'].item() for item in test_dataset]
     predicted_scores = []
     model.eval()
@@ -197,9 +191,9 @@ def compute_metrics_for_regression(eval_pred):
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
     learning_rate=2e-4,
-    per_device_train_batch_size=16,
-    per_device_eval_batch_size=16,
-    num_train_epochs=2,
+    per_device_train_batch_size=32,
+    per_device_eval_batch_size=32,
+    max_steps=250,
     warmup_steps=50,
     fp16=True,
     report_to="wandb",
@@ -223,10 +217,12 @@ trainer = SFTTrainer(
 
 trainer.train()
 
-trainer.model.save_pretrained('/n/home09/lschrage/projects/cs109b/finetuned_model')
-
 history = pd.DataFrame(trainer.state.log_history)
-print(history)
+print("Columns in history:", history.columns)
+for col in history.columns:
+    print(f"First 5 entries in column '{col}':")
+    print(history[col].head(), "\n")
+
 train_loss = history['loss'].dropna()
 val_loss = history['eval_loss'].dropna()
 
@@ -255,6 +251,22 @@ def plot_predictions_vs_actual_finetune(model, test_dataset, path):
     plt.savefig(path)
 plot_predictions_vs_actual_finetune(trainer.model, test_dataset, 'FINETUNE-llama-actual-vs-predicted.png')
 
+
+def plot_predictions_vs_actual_finetune_two(trainer, test_dataset, path):
+    result = trainer.predict(test_dataset)
+    predictions = result.predictions.squeeze()
+    labels = result.label_ids
+
+    # Plotting the results
+    plt.figure(figsize=(10, 5))
+    plt.scatter(labels, predictions, alpha=0.5)
+    plt.plot([min(labels), max(labels)], [min(labels), max(labels)], 'r--')
+    plt.title('Actual vs Predicted Sentiment Scores')
+    plt.xlabel('Actual Scores')
+    plt.ylabel('Predicted Scores')
+    plt.grid(True)
+    plt.savefig(path)
+plot_predictions_vs_actual_finetune_two(trainer.model, test_dataset, '2-FINETUNE-llama-actual-vs-predicted.png')
 
 
 def plot_train_val_loss(train_loss, val_loss, path):
