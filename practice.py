@@ -181,16 +181,12 @@ def compute_metrics_for_regression(eval_pred):
         'r2': r2
     }
 
-BATCH_SIZE = 1
-LEARNING_RATE = 2e-5
-EPOCHS = 1
-
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
-    learning_rate=LEARNING_RATE,
-    per_device_train_batch_size=BATCH_SIZE,
+    learning_rate=2e-5,
+    per_device_train_batch_size=1,
     per_device_eval_batch_size=1,
-    num_train_epochs=EPOCHS,
+    num_train_epochs=1,
     save_steps=25,
     logging_steps=1,
     learning_rate=2e-4,
