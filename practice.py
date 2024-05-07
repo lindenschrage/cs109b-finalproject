@@ -84,10 +84,12 @@ config = LoraConfig(
         task_type="SEQ_CLS",
 )
 
-model = get_peft_model(llama_model, config)
-
 llama_tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=ACCESS_TOKEN)
 llama_tokenizer.pad_token = llama_tokenizer.eos_token 
+
+model = get_peft_model(llama_model, config)
+model.config.pad_token_id = llama_tokenizer.pad_token_id
+
 df_train = pd.DataFrame({
     "input_ids": X_train['Tweet'],
     "labels": y_train
@@ -187,16 +189,24 @@ train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
     learning_rate=LEARNING_RATE,
     per_device_train_batch_size=BATCH_SIZE,
-    per_device_eval_batch_size=2,
+    per_device_eval_batch_size=1,
     num_train_epochs=EPOCHS,
-    evaluation_strategy="epoch",
-    save_strategy="epoch",
-    save_total_limit=2,
+    save_steps=25,
+    logging_steps=1,
+    learning_rate=2e-4,
+    fp16=False,
+    bf16=False,
+    max_grad_norm=0.3,
+    max_steps=-1,
+    warmup_ratio=0.03,
+    group_by_length=True,
+    lr_scheduler_type="linear",
+    report_to="wandb",
+    evaluation_strategy="steps",
+    eval_steps=2000,
     metric_for_best_model="mse",
     load_best_model_at_end=True,
     weight_decay=0.01,
-    logging_strategy="epoch",
-    logging_steps=50
     )
 
 
