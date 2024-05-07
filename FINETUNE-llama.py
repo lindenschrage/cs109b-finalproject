@@ -156,7 +156,11 @@ train_params = TrainingArguments(
     lr_scheduler_type="linear",
     report_to="wandb",
     evaluation_strategy="steps",
-    eval_steps=2000
+    eval_steps=2000,
+    load_best_model_at_end=True,  
+    metric_for_best_model='accuracy',  
+    early_stopping_patience=3 
+
 )
 
 trainer = SFTTrainer(
@@ -202,6 +206,7 @@ def plot_predictions_vs_actual_finetune(model, dataset, path):
 plot_predictions_vs_actual_finetune(trainer.model, test_dataset, 'FINETUNE-llama-actual-vs-predicted.png')
 
 history = pd.DataFrame(trainer.state.log_history)
+print(history.columns)
 train_loss = history['loss'].dropna()
 val_loss = history['eval_loss'].dropna()
 

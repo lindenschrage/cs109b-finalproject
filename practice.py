@@ -153,6 +153,17 @@ train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, collate_fn=
 val_loader = DataLoader(val_dataset, batch_size=1, collate_fn=data_collator)
 test_loader = DataLoader(test_dataset, batch_size=1, collate_fn=data_collator)
 
+for batch in val_loader:
+    with torch.no_grad():
+        outputs = model(batch['input_ids'], attention_mask=batch['attention_mask'])
+    predictions = outputs.logits.squeeze().detach().numpy()
+    actuals = batch['labels'].squeeze().detach().numpy()
+    print("Predictions:", predictions)
+    print("Actuals:", actuals)
+    mse = np.mean((predictions - actuals) ** 2)
+    print("Calculated MSE:", mse)
+    break
+
 #train_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-train-dataset')
 #val_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-val-dataset')
 #test_dataset.save_to_disk('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama-finetune-test-dataset')
@@ -185,8 +196,8 @@ train_params = TrainingArguments(
     load_best_model_at_end=True,
     weight_decay=0.01,
     logging_strategy="epoch",
-    logging_steps=50,
-)
+    logging_steps=50
+    )
 
 
 fine_tuning = SFTTrainer(
@@ -198,7 +209,7 @@ fine_tuning = SFTTrainer(
     dataset_text_field = 'input_ids',
     max_seq_length=512,
     data_collator=data_collator,
-    compute_metrics=compute_metrics_for_regression,
+    compute_metrics=compute_metrics_for_regression
 )
 
 fine_tuning.train()
