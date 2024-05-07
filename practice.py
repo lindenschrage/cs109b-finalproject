@@ -62,8 +62,7 @@ llama_model = LlamaForSequenceClassification.from_pretrained(
     quantization_config=BitsAndBytesConfig(load_in_8bit=True),
     num_labels=1,
     problem_type='regression',
-    ignore_mismatched_sizes=True,
-    dtype = torch.float16)
+    ignore_mismatched_sizes=True)
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
 
