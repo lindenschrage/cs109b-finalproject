@@ -151,9 +151,9 @@ class CustomCollatorWithPadding:
         return batch
 
 data_collator = CustomCollatorWithPadding(tokenizer=llama_tokenizer)
-train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, collate_fn=data_collator)
-val_loader = DataLoader(val_dataset, batch_size=1, collate_fn=data_collator)
-test_loader = DataLoader(test_dataset, batch_size=1, collate_fn=data_collator)
+train_loader = DataLoader(train_dataset, batch_size=5, shuffle=True, collate_fn=data_collator)
+val_loader = DataLoader(val_dataset, batch_size=5, collate_fn=data_collator)
+test_loader = DataLoader(test_dataset, batch_size=5, collate_fn=data_collator)
 
 for batch in val_loader:
     with torch.no_grad():
@@ -183,8 +183,8 @@ def compute_metrics_for_regression(eval_pred):
 
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
-    learning_rate=2e-2,
-    per_device_train_batch_size=1,
+    learning_rate=2e-5,
+    per_device_train_batch_size=5,
     per_device_eval_batch_size=1,
     num_train_epochs=1,
     save_steps=25,
