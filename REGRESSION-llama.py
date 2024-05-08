@@ -14,10 +14,10 @@ from torch.optim import Adam
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import pickle
-from embedding_data import get_llama_embeddings
-from plot_functions import plot_loss, plot_mse, plot_predictions_vs_actual
+from helper_functions import get_llama_embeddings
+from helper_functions import plot_loss, plot_mse, plot_predictions_vs_actual
 
-url = '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/dataframe.csv'
+url = 'data/dataframe.csv'
 df = pd.read_csv(url)
 
 get_llama_embeddings(df, '/n/home09/lschrage/projects/cs109b/llama_embeddings.pkl')
@@ -91,7 +91,6 @@ history = model.fit(
 )
 history_df = pd.DataFrame(history.history)
 history_df.to_csv('/n/home09/lschrage/projects/cs109b/cs109b-finalproject/llama_regression-history.csv', index=False)
-
 
 plot_loss(history, '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/LLAMA-regression-loss.png')
 

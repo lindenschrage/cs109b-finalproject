@@ -14,8 +14,8 @@ from sklearn.model_selection import train_test_split
 from torch.optim import Adam
 from sklearn.preprocessing import StandardScaler
 import pickle
-from embedding_data import get_bert_embeddings
-from plot_functions import plot_loss, plot_mse, plot_predictions_vs_actual
+from helper_functions import get_bert_embeddings
+from helper_functions import plot_loss, plot_mse, plot_predictions_vs_actual
 
 url = 'data/dataframe.csv'
 df = pd.read_csv(url)
