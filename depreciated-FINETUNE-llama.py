@@ -1,9 +1,13 @@
+# Our initial attempt at fine-tuning LLaMA was to generate custom prompts based on the tweet text and expected sentiment,
+# then use the model to predict the sentiment. The prompts format the data to guide the model toward understanding the task.
+# The prediction task resembles few-shot learning, where examples of prompt-based sentiment annotations are included.
+# For the model, we used LlamaForCausalLM, a model designed for generative text tasks.
+# Ultimately, we could not get this method to work, but hope to revisit it in the future!
 
 import torch
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 from transformers import AutoTokenizer
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
