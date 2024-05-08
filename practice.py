@@ -182,11 +182,13 @@ def compute_metrics_for_regression(eval_pred):
     mae = mean_absolute_error(labels, predictions)
     r2 = r2_score(labels, predictions)
     return {
-        'mse': mse,
+        'mse': mse,  
         'mae': mae,
-        'r2': r2
+        'r2': r2,
+        'eval_mse': mse,
+        'eval_mae': mae,
+        'eval_r2': r2,
     }
-
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/llama_finetuned_model",
     learning_rate=2e-4,
@@ -196,7 +198,7 @@ train_params = TrainingArguments(
     fp16=True,
     weight_decay=0.01,
     max_steps=280,
-    metric_for_best_model="eval_mse",  # Change this to "eval_mse"
+    metric_for_best_model="mse", 
     load_best_model_at_end=True,
     logging_strategy="steps",
     save_strategy="steps",
@@ -222,8 +224,6 @@ train_params.logging_dir = "/n/home09/lschrage/projects/cs109b/llama_finetuned_m
 train_result = trainer.train()
 
 metrics = train_result.metrics
-max_train_samples = len(train_dataset)
-metrics["train_samples"] = min(train_dataset, len(train_dataset))
 
 # save train results
 trainer.log_metrics("train", metrics)
@@ -231,8 +231,6 @@ trainer.save_metrics("train", metrics)
 
 # compute evaluation results
 metrics = trainer.evaluate()
-max_val_samples = len(val_dataset)
-metrics["eval_samples"] = min(max_val_samples, len(val_dataset))
 
 # save evaluation results
 trainer.log_metrics("eval", metrics)
