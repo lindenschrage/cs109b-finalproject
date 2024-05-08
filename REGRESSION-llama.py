@@ -1,4 +1,10 @@
-# -*- coding: utf-8 -*-
+# This script fine-tunes a sentiment regression model using embeddings from the LLAMA model. It first extracts the LLAMA 
+# embeddings from a dataset containing annotated tweets, which are then standardized and split into training, validation, 
+# and test sets. The regression model includes three dense layers with dropout for regularization, optimized using an 
+# Adam optimizer with a learning rate schedule. Early stopping ensures training stops when validation loss plateaus. 
+# The training history, loss, and mean squared error are plotted for both training and validation sets, and a comparison 
+# of predicted and actual scores is visualized to assess the model's performance.
+
 import transformers
 import numpy as np
 import pandas as pd
