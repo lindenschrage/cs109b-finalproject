@@ -33,6 +33,8 @@ from peft import LoraConfig, get_peft_model
 import os
 from peft import prepare_model_for_kbit_training
 from dotenv import load_dotenv, dotenv_values 
+from transformers import DataCollatorWithPadding
+
 load_dotenv() 
 
 
@@ -133,9 +135,6 @@ train_dataset = train_dataset.map(convert_to_fp16, batched=True)
 val_dataset = val_dataset.map(convert_to_fp16, batched=True)
 test_dataset = test_dataset.map(convert_to_fp16, batched=True)
 
-
-from transformers import DataCollatorWithPadding
-
 class CustomCollatorWithPadding:
     def __init__(self, tokenizer):
         self.data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
@@ -176,6 +175,16 @@ def plot_predictions_vs_actual_finetune(model, test_dataset, path):
     plt.savefig(path)
 plot_predictions_vs_actual_finetune(model, test_dataset, 'BASELINE-FINETUNE-llama-actual-vs-predicted.png')
 
+def compute_metrics_for_regression(eval_pred):
+    predictions, labels = eval_pred
+    mse = mean_squared_error(labels, predictions)
+    mae = mean_absolute_error(labels, predictions)
+    r2 = r2_score(labels, predictions)
+    return {
+        'mse': mse,
+        'mae': mae,
+        'r2': r2
+    }
 
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/llama_finetuned_model",
@@ -190,11 +199,10 @@ train_params = TrainingArguments(
     metric_for_best_model="mse", 
     load_best_model_at_end=True,
     logging_strategy="steps",
-    save_strategy="steps",
     evaluation_strategy="steps",
     logging_steps=40,
     eval_steps=40,
-    save_steps=40
+    do_eval=True
 )
 
 trainer = SFTTrainer(
@@ -205,7 +213,8 @@ trainer = SFTTrainer(
     args=train_params,
     dataset_text_field='input_ids',
     max_seq_length=512,
-    data_collator=data_collator
+    data_collator=data_collator,
+    compute_metrics=compute_metrics_for_regression
 )
 
 train_result = trainer.train()
@@ -241,7 +250,6 @@ def plot_predictions_vs_actual_finetune_two(trainer, test_dataset, path):
     predictions = result.predictions.squeeze()
     labels = result.label_ids
 
-    # Plotting the results
     plt.figure(figsize=(10, 5))
     plt.scatter(labels, predictions, alpha=0.5)
     plt.plot([min(labels), max(labels)], [min(labels), max(labels)], 'r--')
@@ -258,13 +266,9 @@ metrics1 = trainer.evaluate()
 print(metrics1)
 
 
-# save train results
 trainer.log_metrics("train", metrics)
 trainer.save_metrics("train", metrics)
 
-# compute evaluation results
-
-# save evaluation results
 trainer.log_metrics("eval", metrics1)
 trainer.save_metrics("eval", 1)
 
