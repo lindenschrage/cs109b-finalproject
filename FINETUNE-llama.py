@@ -143,7 +143,7 @@ data_collator = DataCollatorWithPadding(tokenizer=llama_tokenizer, return_tensor
 
 train_loader = DataLoader(
     train_dataset,  
-    batch_size=5,   
+    batch_size=1,   
     shuffle=True,   
     collate_fn=data_collator,  
     drop_last=True  
@@ -151,14 +151,14 @@ train_loader = DataLoader(
 
 val_loader = DataLoader(
     val_dataset,
-    batch_size=5,
+    batch_size=1,
     shuffle=False,
     collate_fn=data_collator
 )
 
 test_loader = DataLoader(
     test_dataset,
-    batch_size=5,
+    batch_size=1,
     shuffle=False,
     collate_fn=data_collator
 )
@@ -166,8 +166,8 @@ test_loader = DataLoader(
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
     num_train_epochs=1,
-    per_device_train_batch_size=5,
-    gradient_accumulation_steps=5,
+    per_device_train_batch_size=1,
+    gradient_accumulation_steps=1,
     save_steps=100,
     logging_steps=100,
     learning_rate=2e-4,
