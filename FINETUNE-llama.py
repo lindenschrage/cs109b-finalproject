@@ -137,29 +137,26 @@ test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'l
 from transformers import DataCollatorWithPadding
 from torch.utils.data import DataLoader
 
-# Since you've already tokenized and formatted your datasets, the data collator will handle padding
 data_collator = DataCollatorWithPadding(tokenizer=llama_tokenizer, return_tensors="pt")
 
-# Create the DataLoader for training data
 train_loader = DataLoader(
-    train_dataset,  # this is your tokenized and formatted dataset
-    batch_size=4,   # number of samples per batch
-    shuffle=True,   # shuffle the data to ensure random distribution
-    collate_fn=data_collator,  # uses the data collator for padding
-    drop_last=True  # drops the last incomplete batch, if the dataset size isn't divisible by the batch size
+    train_dataset,  
+    batch_size=32,   
+    shuffle=True,   
+    collate_fn=data_collator,  
+    drop_last=True  
 )
 
-# Similarly, create DataLoaders for validation and test datasets
 val_loader = DataLoader(
     val_dataset,
-    batch_size=4,
+    batch_size=32,
     shuffle=False,
     collate_fn=data_collator
 )
 
 test_loader = DataLoader(
     test_dataset,
-    batch_size=4,
+    batch_size=32,
     shuffle=False,
     collate_fn=data_collator
 )
@@ -167,8 +164,8 @@ test_loader = DataLoader(
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
     num_train_epochs=1,
-    per_device_train_batch_size=4,
-    gradient_accumulation_steps=4,
+    per_device_train_batch_size=32,
+    gradient_accumulation_steps=32,
     save_steps=25,
     logging_steps=1,
     learning_rate=2e-4,
@@ -201,8 +198,10 @@ trainer = SFTTrainer(
 trainer.train()
 
 history = pd.DataFrame(trainer.state.log_history)
-
-print(history)
+print("Columns in history:", history.columns)
+for col in history.columns:
+    print(f"First 5 entries in column '{col}':")
+    print(history[col].head(), "\n")
 
 
 ##########

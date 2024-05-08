@@ -202,7 +202,9 @@ train_params = TrainingArguments(
     save_strategy="steps",
     evaluation_strategy="steps",
     logging_steps=40,
-    eval_steps=40
+    eval_steps=40,
+    save_steps=40
+
 )
 
 trainer = SFTTrainer(
