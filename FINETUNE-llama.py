@@ -1,9 +1,14 @@
+# In this script, a LLaMA model is fine-tuned for sentiment regression on tweets. The data is split into training, validation,
+# and test sets with stratified sampling. The "meta-llama/Llama-2-7b-hf" model is loaded and configured using a 
+# LoRA adapter and BitsAndBytes quantization for efficient training. The data is preprocessed using a tokenizer and a custom 
+# data collator to handle padding and batching. Fine-tuning is done through the SFTTrainer API, and the model's performance 
+# is assessed using mean squared error metrics and accuracy on positive, negative, and neutral sentiments. Final plots of 
+# predicted vs actual scores are generated to visualize the results.
 
 import torch
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 from transformers import AutoTokenizer
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -37,7 +42,6 @@ from transformers import DataCollatorWithPadding
 
 load_dotenv() 
 
-
 os.environ["WANDB_PROJECT"]="twitter-sentiment-analysis"
 
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
@@ -51,7 +55,6 @@ X = df
 X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size=0.2, random_state=109, stratify=X['Sentiment'])
 
 X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, test_size=0.2, random_state=109, stratify=X_train_full['Sentiment'])
-
 
 model = "meta-llama/Llama-2-7b-hf"
 
