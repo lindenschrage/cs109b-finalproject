@@ -176,18 +176,10 @@ def plot_predictions_vs_actual_finetune(model, test_dataset, path):
     plt.savefig(path)
 plot_predictions_vs_actual_finetune(model, test_dataset, 'BASELINE-FINETUNE-llama-actual-vs-predicted.png')
 
-def compute_metrics_for_regression(eval_pred):
-    predictions, labels = eval_pred
-    mse = mean_squared_error(labels, predictions)
-    mae = mean_absolute_error(labels, predictions)
-    r2 = r2_score(labels, predictions)
-    return {
-        'eval_mse': mse,
-        'eval_mae': mae,
-        'eval_r2': r2,
-    }
+
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/llama_finetuned_model",
+    logging_dir="/n/home09/lschrage/projects/cs109b/llama_finetuned_model_logs",
     learning_rate=2e-4,
     per_device_train_batch_size=32,
     per_device_eval_batch_size=32,
@@ -195,7 +187,7 @@ train_params = TrainingArguments(
     fp16=True,
     weight_decay=0.01,
     max_steps=280,
-    metric_for_best_model="eval_mse", 
+    metric_for_best_model="mse", 
     load_best_model_at_end=True,
     logging_strategy="steps",
     save_strategy="steps",
@@ -213,33 +205,10 @@ trainer = SFTTrainer(
     args=train_params,
     dataset_text_field='input_ids',
     max_seq_length=512,
-    data_collator=data_collator,
-    compute_metrics=compute_metrics_for_regression
+    data_collator=data_collator
 )
 
-train_params.logging_dir = "/n/home09/lschrage/projects/cs109b/llama_finetuned_model_logs"
 train_result = trainer.train()
-
-metrics = train_result.metrics
-
-# save train results
-trainer.log_metrics("train", metrics)
-trainer.save_metrics("train", metrics)
-
-# compute evaluation results
-metrics = trainer.evaluate()
-
-# save evaluation results
-trainer.log_metrics("eval", metrics)
-trainer.save_metrics("eval", metrics)
-
-history = pd.DataFrame(trainer.state.log_history)
-print("Columns in history:", history.columns)
-for col in history.columns:
-    print(f"First 5 entries in column '{col}':")
-    print(history[col].head(), "\n")
-
-
 
 def plot_predictions_vs_actual_finetune(model, test_dataset, path):
     test_loader = DataLoader(test_dataset, batch_size=32, collate_fn=data_collator)
@@ -282,6 +251,31 @@ def plot_predictions_vs_actual_finetune_two(trainer, test_dataset, path):
     plt.grid(True)
     plt.savefig(path)
 plot_predictions_vs_actual_finetune_two(trainer.model, test_dataset, '2-FINETUNE-llama-actual-vs-predicted.png')
+
+metrics = train_result.metrics
+print(metrics)
+metrics1 = trainer.evaluate()
+print(metrics1)
+
+
+# save train results
+trainer.log_metrics("train", metrics)
+trainer.save_metrics("train", metrics)
+
+# compute evaluation results
+
+# save evaluation results
+trainer.log_metrics("eval", metrics1)
+trainer.save_metrics("eval", 1)
+
+history = pd.DataFrame(trainer.state.log_history)
+print("Columns in history:", history.columns)
+for col in history.columns:
+    print(f"First 5 entries in column '{col}':")
+    print(history[col].head(), "\n")
+
+
+
 
 '''
 def plot_train_val_loss(train_loss, val_loss, path):
