@@ -1,3 +1,11 @@
+# In this approach, we fine-tuned a BERT model to predict sentiment scores from tweets. We used the BertTokenizer for 
+# tokenization and BertForSequenceClassification as the model, customizing it for regression with a single output label.
+# We split the data into training, validation, and test sets to evaluate the model's performance. We implemented a custom 
+# TextDataset class to handle tokenization and padding for each input tweet, enabling consistent input processing. 
+# For training, we configured data loaders and utilized the Trainer API to handle training arguments, data collators, 
+# and metrics. Finally, we visualized the results by comparing the predicted sentiment scores to actual scores and plotted
+# the training and validation loss curves over epochs.
+
 import torch
 from torch.utils.data import DataLoader, Dataset
 from transformers import BertTokenizer, BertForSequenceClassification, AdamW
