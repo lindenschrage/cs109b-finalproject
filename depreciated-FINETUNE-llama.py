@@ -36,7 +36,7 @@ os.environ["WANDB_PROJECT"]="twitter-sentiment-analysis"
 
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 
-url = 'dataframe.csv'
+url = 'data/dataframe.csv'
 df = pd.read_csv(url)
 print(df.head())
 

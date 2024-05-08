@@ -17,7 +17,7 @@ import pickle
 from embedding_data import get_bert_embeddings
 from plot_functions import plot_loss, plot_mse, plot_predictions_vs_actual
 
-url = '/n/home09/lschrage/projects/cs109b/cs109b-finalproject/dataframe.csv'
+url = 'data/dataframe.csv'
 df = pd.read_csv(url)
 
 tweet_annotation = list(df['TweetAvgAnnotation'])

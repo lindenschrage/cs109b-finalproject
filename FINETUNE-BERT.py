@@ -15,7 +15,7 @@ from transformers import TrainingArguments, Trainer
 import matplotlib.pyplot as plt
 from torch.nn.utils.rnn import pad_sequence
 
-df_url = 'https://raw.githubusercontent.com/lindenschrage/cs109b-data/main/dataframe.csv'
+df_url = 'data/dataframe.csv'
 df = pd.read_csv(df_url)
 
 model_name = 'bert-base-uncased'
