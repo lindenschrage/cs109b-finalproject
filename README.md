@@ -39,7 +39,7 @@ This repository contains all the data, models, and helper functions needed for f
 
 ### Usage Instructions
 
-1. **Installation**  
+**Installation**  
    Clone the repository and install required packages:
 
    ```bash
@@ -47,22 +47,3 @@ This repository contains all the data, models, and helper functions needed for f
    cd <repository-directory>
    pip install -r requirements.txt
    
-2. **Fine-tuning Models**
-To fine-tune the BERT model, use 'FINETUNE-BERT.py'.
-To fine-tune the LLaMA model, use 'FINETUNE-llama.py'.
-
-3. **Training Regression Models**
-Run 'REGRESSION-bert.py' to train the BERT regression model using BERT embeddings.
-Run 'REGRESSION-llama.py' to train the LLaMA regression model using LLaMA embeddings.
-
-5. **Generating Embeddings**
-The embeddings can be created using the 'embedding_data.py' script found in helper_functions/.
-
-6. **Data Preprocessing**
-If the dataset needs further preprocessing, refer to 'pre_process_data.py'.
-
-7. **Plotting and Visualization##
-Use the plotting functions in 'plot_functions.py' to visualize the results and model performance.
-
-8. **Depreciated Files**
-'depreciated-FINETUNE-llama.py' contains the initial attempt to fine-tune the LLaMA model using custom prompts. While ultimately unsuccessful, it remains in the repo for reference.
