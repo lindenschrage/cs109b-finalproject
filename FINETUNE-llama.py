@@ -42,6 +42,7 @@ print(df.head())
 
 y = df['TweetAvgAnnotation']
 X = df
+print('1')
 
 X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size=0.2, random_state=109, stratify=X['Sentiment'])
 
@@ -80,6 +81,7 @@ bnb_config = BitsAndBytesConfig(
     bnb_4bit_use_double_quant=True,
 )
 
+print('2')
 llama_model = LlamaForCausalLM.from_pretrained(
     "meta-llama/Llama-2-7b-hf",
     token=ACCESS_TOKEN,
