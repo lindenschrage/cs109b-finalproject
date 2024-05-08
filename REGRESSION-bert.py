@@ -1,4 +1,9 @@
-# -*- coding: utf-8 -*-
+# This script fine-tunes a sentiment regression model using BERT embeddings extracted from tweet data. The BERT embeddings
+# are loaded from a saved pickle file and scaled with standardization. The data is then split into training, validation, 
+# and test sets. The model architecture includes several dense layers with regularization and is optimized using an 
+# Adam optimizer with a learning rate schedule. Early stopping ensures training halts once validation performance plateaus. 
+# The model is trained, and its loss and MSE are plotted for both training and validation sets. Finally, the script 
+# compares predicted and actual sentiment scores for the test data, saving the plot to visualize performance.
 
 import transformers
 import numpy as np
