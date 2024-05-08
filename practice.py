@@ -175,11 +175,14 @@ def plot_predictions_vs_actual_finetune(model, test_dataset, path):
     plt.savefig(path)
 plot_predictions_vs_actual_finetune(model, test_dataset, 'BASELINE-FINETUNE-llama-actual-vs-predicted.png')
 
+from sklearn.metrics import classification_report
+
 def compute_metrics_for_regression(eval_pred):
     predictions, labels = eval_pred
     mse = mean_squared_error(labels, predictions)
     mae = mean_absolute_error(labels, predictions)
     r2 = r2_score(labels, predictions)
+    print(classification_report(labels, predictions))
     return {
         'mse': mse,
         'mae': mae,
@@ -195,13 +198,14 @@ train_params = TrainingArguments(
     warmup_steps=50,
     fp16=True,
     weight_decay=0.01,
-    max_steps=280,
+    max_steps=160,
     metric_for_best_model="mse",
     logging_strategy="steps",
     evaluation_strategy="steps",
     logging_steps=40,
     eval_steps=40,
     do_eval=True,
+    prediction_loss_only=True
 )
 
 trainer = SFTTrainer(
@@ -244,20 +248,51 @@ def plot_predictions_vs_actual_finetune(model, test_dataset, path):
 plot_predictions_vs_actual_finetune(trainer.model, test_dataset, 'FINETUNE-llama-actual-vs-predicted.png')
 
 
-def plot_predictions_vs_actual_finetune_two(trainer, test_dataset, path):
-    result = trainer.predict(test_dataset)
-    predictions = result.predictions.squeeze()
-    labels = result.label_ids
+def get_predictions(model, test_dataset):
+    test_loader = DataLoader(test_dataset, batch_size=32, collate_fn=data_collator)
+    true_labels = [item['labels'].item() for item in test_dataset]
+    predicted_scores = []
+    model.eval()
+    with torch.no_grad():
+        for batch in test_loader:
+            input_ids = batch['input_ids'].to('cuda')
+            attention_mask = batch['attention_mask'].to('cuda')
+            outputs = model(input_ids, attention_mask=attention_mask)
+            batch_scores = outputs.logits.squeeze().tolist()
+            if isinstance(batch_scores, float):
+                batch_scores = [batch_scores]
+            predicted_scores.extend(batch_scores)
+    return predicted_scores, true_labels
+predicted_scores, true_labels = get_predictions(trainer.model, test_dataset)
 
-    plt.figure(figsize=(10, 5))
-    plt.scatter(labels, predictions, alpha=0.5)
-    plt.plot([min(labels), max(labels)], [min(labels), max(labels)], 'r--')
-    plt.title('Actual vs Predicted Sentiment Scores')
-    plt.xlabel('Actual Scores')
-    plt.ylabel('Predicted Scores')
-    plt.grid(True)
-    plt.savefig(path)
-plot_predictions_vs_actual_finetune_two(trainer.model, test_dataset, '2-FINETUNE-llama-actual-vs-predicted.png')
+accuracy = pos_accuracy = neut_accuracy = neg_accuracy = num_pos = num_neg = num_neut = 0
+for i in range(len(predicted_scores)):
+  if true_labels[i] >= 1.0:
+    num_pos += 1
+    if predicted_scores[i] >= 1.0:
+      accuracy += 1
+      pos_accuracy += 1
+  elif true_labels[i] <= -1.0:
+    num_neg +=1
+    if predicted_scores[i] <= -1.0:
+      accuracy += 1
+      neg_accuracy += 1
+  else:
+    num_neut+=1
+    if ((predicted_scores[i] < 1.0) and (predicted_scores[i] > -1.0)):
+      accuracy += 1
+      neut_accuracy += 1
+accuracy_score = accuracy / len(predicted_scores)
+pos_score = pos_accuracy / num_pos
+neg_score = neg_accuracy / num_neg
+neut_score = neut_accuracy / num_neut
+
+
+print("Accuracy score", accuracy_score)
+print("Pos score", pos_score)
+print("Neg score", neg_score)
+print("Neut score", neut_score)
+
 
 metrics = train_result.metrics
 print(metrics)
