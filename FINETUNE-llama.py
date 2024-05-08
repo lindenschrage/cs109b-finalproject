@@ -169,7 +169,7 @@ train_params = TrainingArguments(
     per_device_train_batch_size=32,
     gradient_accumulation_steps=32,
     save_steps=25,
-    logging_steps=1,
+    logging_steps=100,
     learning_rate=2e-4,
     weight_decay=0.001,
     fp16=False,
@@ -181,10 +181,8 @@ train_params = TrainingArguments(
     lr_scheduler_type="linear",
     report_to="wandb",
     evaluation_strategy="steps",
-    eval_steps=2000,
-    load_best_model_at_end=True,  
+    eval_steps=100,
     metric_for_best_model='accuracy',  
-    early_stopping_patience=3 
 
 )
 
