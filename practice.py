@@ -188,21 +188,21 @@ def compute_metrics_for_regression(eval_pred):
     }
 
 train_params = TrainingArguments(
-    output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
+    output_dir="/n/home09/lschrage/projects/cs109b/llama_finetuned_model",
     learning_rate=2e-4,
     per_device_train_batch_size=32,
     per_device_eval_batch_size=32,
     warmup_steps=50,
     fp16=True,
     weight_decay=0.01,
-    num_train_epochs=2,
-    evaluation_strategy="steps",
-    save_strategy="steps",
-    save_total_limit=2,
+    max_steps=280,
     metric_for_best_model="mse",
     load_best_model_at_end=True,
     logging_strategy="steps",
-    logging_steps=1,
+    save_strategy="steps",
+    evaluation_strategy="steps",
+    logging_steps=40,
+    eval_steps=40
 )
 
 trainer = SFTTrainer(
@@ -217,9 +217,25 @@ trainer = SFTTrainer(
     compute_metrics=compute_metrics_for_regression
 )
 
-trainer.train()
+train_params.logging_dir = "/n/home09/lschrage/projects/cs109b/llama_finetuned_model_logs"
+train_result = trainer.train()
 
-trainer.train()
+metrics = train_result.metrics
+max_train_samples = len(train_dataset)
+metrics["train_samples"] = min(train_dataset, len(train_dataset))
+
+# save train results
+trainer.log_metrics("train", metrics)
+trainer.save_metrics("train", metrics)
+
+# compute evaluation results
+metrics = trainer.evaluate()
+max_val_samples = len(val_dataset)
+metrics["eval_samples"] = min(max_val_samples, len(val_dataset))
+
+# save evaluation results
+trainer.log_metrics("eval", metrics)
+trainer.save_metrics("eval", metrics)
 
 history = pd.DataFrame(trainer.state.log_history)
 print("Columns in history:", history.columns)
