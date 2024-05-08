@@ -182,9 +182,6 @@ def compute_metrics_for_regression(eval_pred):
     mae = mean_absolute_error(labels, predictions)
     r2 = r2_score(labels, predictions)
     return {
-        'mse': mse,  
-        'mae': mae,
-        'r2': r2,
         'eval_mse': mse,
         'eval_mae': mae,
         'eval_r2': r2,
@@ -198,7 +195,7 @@ train_params = TrainingArguments(
     fp16=True,
     weight_decay=0.01,
     max_steps=280,
-    metric_for_best_model="mse", 
+    metric_for_best_model="eval_mse", 
     load_best_model_at_end=True,
     logging_strategy="steps",
     save_strategy="steps",
