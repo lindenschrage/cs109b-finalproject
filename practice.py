@@ -175,14 +175,12 @@ def plot_predictions_vs_actual_finetune(model, test_dataset, path):
     plt.savefig(path)
 plot_predictions_vs_actual_finetune(model, test_dataset, 'BASELINE-FINETUNE-llama-actual-vs-predicted.png')
 
-from sklearn.metrics import classification_report
 
 def compute_metrics_for_regression(eval_pred):
     predictions, labels = eval_pred
     mse = mean_squared_error(labels, predictions)
     mae = mean_absolute_error(labels, predictions)
     r2 = r2_score(labels, predictions)
-    print(classification_report(labels, predictions))
     return {
         'mse': mse,
         'mae': mae,
@@ -198,14 +196,16 @@ train_params = TrainingArguments(
     warmup_steps=50,
     fp16=True,
     weight_decay=0.01,
-    max_steps=160,
+    max_steps=280,
     metric_for_best_model="mse",
     logging_strategy="steps",
     evaluation_strategy="steps",
     logging_steps=40,
     eval_steps=40,
+    save_steps=40,
     do_eval=True,
-    prediction_loss_only=True
+    prediction_loss_only=True,
+    load_best_model_at_end=True
 )
 
 trainer = SFTTrainer(
@@ -299,20 +299,44 @@ print(metrics)
 metrics1 = trainer.evaluate()
 print(metrics1)
 
-
-trainer.log_metrics("train", metrics)
-trainer.save_metrics("train", metrics)
-
-trainer.log_metrics("eval", metrics1)
-trainer.save_metrics("eval", 1)
-
 history = pd.DataFrame(trainer.state.log_history)
 print("Columns in history:", history.columns)
 for col in history.columns:
     print(f"First 5 entries in column '{col}':")
     print(history[col].head(), "\n")
 
+from sklearn.metrics import mean_squared_error
 
+# Ensure the model is in evaluation mode
+model.eval()
+
+# Store predictions and actual labels
+all_preds = []
+all_labels = []
+
+# Perform inference on the validation dataset
+with torch.no_grad():
+    for batch in val_loader:
+        input_ids = batch['input_ids'].to('cuda')
+        attention_mask = batch['attention_mask'].to('cuda')
+        labels = batch['labels'].cpu().numpy()
+
+        # Obtain model outputs
+        outputs = model(input_ids, attention_mask=attention_mask)
+
+        # Detach and move predictions to the CPU
+        predictions = outputs.logits.squeeze().cpu().numpy()
+
+        if isinstance(predictions, float):
+            predictions = [predictions]
+
+        all_preds.extend(predictions)
+        all_labels.extend(labels)
+
+# Calculate the mean squared error
+val_mse = mean_squared_error(all_labels, all_preds)
+
+print(f'Validation Mean Squared Error: {val_mse}')
 
 
 '''

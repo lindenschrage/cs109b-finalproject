@@ -203,16 +203,11 @@ for col in history.columns:
     print(f"First 5 entries in column '{col}':")
     print(history[col].head(), "\n")
 
-
 ##########
-
 
 import re
 
 def extract_sentiment(prediction_text):
-    # Regex to find the pattern '= <optional space> <number>'
-    # It looks specifically for an optional negative sign, followed by one or more digits,
-    # optionally followed by a decimal point and more digits (the pattern for a floating point number).
     match = re.search(r'=\s*(-?\d+(?:\.\d+)?)', prediction_text)
     if match:
         return float(match.group(1))
@@ -221,33 +216,27 @@ def extract_sentiment(prediction_text):
     
 
 def evaluate_model(dataloader):
-    model.eval()  # Ensure model is in evaluation mode
+    model.eval() 
     predictions = []
     true_labels = []
 
     with torch.no_grad():
         for batch in dataloader:
-            # Ensure data is on the correct device
             input_ids = batch['input_ids'].to(model.device)
             attention_mask = batch['attention_mask'].to(model.device)
 
-            # Generate outputs
             outputs = model.generate(input_ids=input_ids, attention_mask=attention_mask)
 
-            # Decode generated ids to text and extract sentiment
             prediction_texts = [llama_tokenizer.decode(generated_id, skip_special_tokens=True) for generated_id in outputs]
             sentiments = [extract_sentiment(text) for text in prediction_texts]
             
-            # Append results
             predictions.extend(sentiments)
             true_labels.extend(batch['labels'].tolist())
 
-    # Calculate Mean Squared Error
     print(true_labels)
     mse = mean_squared_error(true_labels, predictions)
     return mse
 
-# Calculate MSE for validation and test sets
 test_mse = evaluate_model(test_loader)
 val_mse = evaluate_model(val_loader)
 
