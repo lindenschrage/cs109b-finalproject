@@ -243,8 +243,7 @@ for col in history.columns:
     print(f"First 5 entries in column '{col}':")
     print(history[col].head(), "\n")
 
-train_loss = history['loss'].dropna()
-val_loss = history['eval_loss'].dropna()
+
 
 def plot_predictions_vs_actual_finetune(model, test_dataset, path):
     test_loader = DataLoader(test_dataset, batch_size=32, collate_fn=data_collator)
@@ -288,7 +287,7 @@ def plot_predictions_vs_actual_finetune_two(trainer, test_dataset, path):
     plt.savefig(path)
 plot_predictions_vs_actual_finetune_two(trainer.model, test_dataset, '2-FINETUNE-llama-actual-vs-predicted.png')
 
-
+'''
 def plot_train_val_loss(train_loss, val_loss, path):
     epochs = range(1, len(train_loss) + 1)
     plt.figure(figsize=(10, 5))
@@ -301,3 +300,4 @@ def plot_train_val_loss(train_loss, val_loss, path):
     plt.grid(True)
     plt.savefig(path)
 plot_train_val_loss(train_loss, val_loss, 'FINETUNE-llama-train-val-mse.png')
+'''
