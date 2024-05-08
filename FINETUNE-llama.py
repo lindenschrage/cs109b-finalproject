@@ -12,7 +12,7 @@ import bitsandbytes as bnb
 from sklearn.model_selection import train_test_split
 import torch
 import transformers
-from transformers import LlamaTokenizer, LlamaForCausalLM, BitsAndBytesConfig, pipeline
+from transformers import LlamaTokenizer, LlamaForSequenceClassification, BitsAndBytesConfig, pipeline
 import torch.nn.functional as F
 import accelerate
 import sklearn
@@ -23,14 +23,20 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from trl import SFTTrainer
 from datasets import Dataset
 import wandb
+from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
+from sklearn.metrics import r2_score
 from datasets import DatasetInfo, Features, Value
 from datasets import load_from_disk
 import accelerate
 from peft import LoraConfig, get_peft_model 
 import os
+from peft import prepare_model_for_kbit_training
 from dotenv import load_dotenv, dotenv_values 
+from transformers import DataCollatorWithPadding
+
 load_dotenv() 
+
 
 os.environ["WANDB_PROJECT"]="twitter-sentiment-analysis"
 
@@ -38,86 +44,66 @@ ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 
 url = 'dataframe.csv'
 df = pd.read_csv(url)
-print(df.head())
 
 y = df['TweetAvgAnnotation']
 X = df
-print('1')
 
 X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, test_size=0.2, random_state=109, stratify=X['Sentiment'])
 
 X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, test_size=0.2, random_state=109, stratify=X_train_full['Sentiment'])
 
-def generate_train_prompt(tweet):
-  return f"""
-          Analyze the sentiment of the tweet enclosed in square brackets,
-          determine if it is optimistic, neutral, or pessamistic, and return the answer as a float value rounded to two decimal places
-          between -3 (corresponding to a  negative sentiment) and 3 (corresponding to a positive sentiment).
-
-          [{tweet["Tweet"]}] = {tweet["TweetAvgAnnotation"]}
-          """.strip()
-def generate_test_prompt(tweet):
-  return f"""
-          Analyze the sentiment of the tweet enclosed in square brackets,
-          determine if it is positive, neutral, or negative, and return the answer as a float value rounded to two decimal places
-          between -3 (corresponding to a  negative sentiment) and 3 (corresponding to a positive sentiment).
-
-          [{tweet["Tweet"]}] =
-          """.strip()
-
-X_train_full['Prompt'] = X_train_full.apply(generate_train_prompt, axis=1)
-X_train['Prompt'] = X_train.apply(generate_train_prompt, axis=1)
-X_test['Prompt'] = X_test.apply(generate_test_prompt, axis=1)
-X_val['Prompt'] = X_val.apply(generate_test_prompt, axis=1)
 
 model = "meta-llama/Llama-2-7b-hf"
 
-compute_dtype = getattr(torch, "float16")
-
-bnb_config = BitsAndBytesConfig(
-    load_in_4bit=True, 
-    bnb_4bit_quant_type="nf4", 
-    bnb_4bit_compute_dtype=compute_dtype,
-    bnb_4bit_use_double_quant=True,
+nf4_config = BitsAndBytesConfig(
+   load_in_4bit=True,
+   bnb_4bit_quant_type="nf4",
+   bnb_4bit_use_double_quant=True,
+   bnb_4bit_compute_dtype=torch.bfloat16
 )
 
-print('2')
-llama_model = LlamaForCausalLM.from_pretrained(
+llama_model = LlamaForSequenceClassification.from_pretrained(
     "meta-llama/Llama-2-7b-hf",
     token=ACCESS_TOKEN,
-    quantization_config=bnb_config,
-    output_hidden_states=False,
-    output_attentions=False)
+    quantization_config=nf4_config,
+    num_labels=1,
+    problem_type='regression',
+    ignore_mismatched_sizes=True)
 llama_model.config.use_cache = False
 llama_model.config.pretraining_tp = 1
 
+llama = prepare_model_for_kbit_training(llama_model)
+
 config = LoraConfig(
-        lora_alpha=16, 
-        lora_dropout=0.1,
-        r=64,
-        bias="none",
-        target_modules="all-linear",
-        task_type="CAUSAL_LM",
+    r=64, lora_alpha=64, target_modules=[
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
+    ], lora_dropout=0.05, bias="none"
 )
 
-model = get_peft_model(llama_model, config)
-
 llama_tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", token=ACCESS_TOKEN)
-llama_tokenizer.pad_token = llama_tokenizer.eos_token
-llama_tokenizer.padding_side = "right"
+llama_tokenizer.pad_token = llama_tokenizer.eos_token 
+
+model = get_peft_model(llama, config)
+model.config.pad_token_id = llama_tokenizer.pad_token_id
 
 df_train = pd.DataFrame({
-    "input_ids": X_train['Prompt'],
+    "input_ids": X_train['Tweet'],
     "labels": y_train
 })
 
 df_val = pd.DataFrame({
-    "input_ids": X_val['Prompt'],
+    "input_ids": X_val['Tweet'],
     "labels": y_val
 })
 
 df_test = pd.DataFrame({
-    "input_ids": X_test['Prompt'],
+    "input_ids": X_test['Tweet'],
     "labels": y_test
 })
 
@@ -125,65 +111,99 @@ train_dataset = Dataset.from_pandas(df_train)
 val_dataset = Dataset.from_pandas(df_val)
 test_dataset = Dataset.from_pandas(df_test)
 
-def tokenize_function(df):
-    return llama_tokenizer(df["input_ids"], padding="max_length", truncation=True, max_length=1024)
+def process_inputs(example):
+    result = llama_tokenizer(example['input_ids'])
+    result['labels'] = example['labels']
+    return result
 
-train_dataset = train_dataset.map(tokenize_function, batched=True)
-val_dataset = val_dataset.map(tokenize_function, batched=True)
-test_dataset = test_dataset.map(tokenize_function, batched=True)
+train_dataset = train_dataset.map(process_inputs, batched=True)
+val_dataset = val_dataset.map(process_inputs, batched=True)
+test_dataset = test_dataset.map(process_inputs, batched=True)
 
 train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 val_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
-from transformers import DataCollatorWithPadding
-from torch.utils.data import DataLoader
 
-data_collator = DataCollatorWithPadding(tokenizer=llama_tokenizer, return_tensors="pt")
+def convert_to_fp16(batch):
+    labels = batch['labels'].clone().detach().to(dtype=torch.float16).unsqueeze(-1)
+    batch['labels'] = labels
+    return batch
 
-train_loader = DataLoader(
-    train_dataset,  
-    batch_size=1,   
-    shuffle=True,   
-    collate_fn=data_collator,  
-    drop_last=True  
-)
 
-val_loader = DataLoader(
-    val_dataset,
-    batch_size=1,
-    shuffle=False,
-    collate_fn=data_collator
-)
+train_dataset = train_dataset.map(convert_to_fp16, batched=True)
+val_dataset = val_dataset.map(convert_to_fp16, batched=True)
+test_dataset = test_dataset.map(convert_to_fp16, batched=True)
 
-test_loader = DataLoader(
-    test_dataset,
-    batch_size=1,
-    shuffle=False,
-    collate_fn=data_collator
-)
+class CustomCollatorWithPadding:
+    def __init__(self, tokenizer):
+        self.data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+
+    def __call__(self, batch):
+        batch = self.data_collator(batch)
+        if 'labels' in batch:
+            batch['labels'] = batch['labels'].to(dtype=torch.float16)
+        return batch
+
+data_collator = CustomCollatorWithPadding(tokenizer=llama_tokenizer)
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=data_collator)
+val_loader = DataLoader(val_dataset, batch_size=32, collate_fn=data_collator)
+test_loader = DataLoader(test_dataset, batch_size=32, collate_fn=data_collator)
+
+def plot_predictions_vs_actual_finetune(model, test_dataset, path):
+    test_loader = DataLoader(test_dataset, batch_size=32, collate_fn=data_collator)
+    true_labels = [item['labels'].item() for item in test_dataset]
+    predicted_scores = []
+    model.eval()
+    with torch.no_grad():
+        for batch in test_loader:
+            input_ids = batch['input_ids']
+            attention_mask = batch['attention_mask']
+            outputs = model(input_ids, attention_mask=attention_mask)
+            batch_scores = outputs.logits.squeeze().tolist()
+            if isinstance(batch_scores, float):
+                batch_scores = [batch_scores]
+            predicted_scores.extend(batch_scores)
+
+    plt.figure(figsize=(10, 5))
+    plt.scatter(true_labels, predicted_scores, alpha=0.5)
+    plt.plot([min(true_labels), max(true_labels)], [min(true_labels), max(true_labels)], 'r--')
+    plt.title('Actual vs Predicted Sentiment Scores')
+    plt.xlabel('Actual Scores')
+    plt.ylabel('Predicted Scores')
+    plt.grid(True)
+    plt.savefig(path)
+plot_predictions_vs_actual_finetune(model, test_dataset, 'BASELINE-FINETUNE-llama-actual-vs-predicted.png')
+
+
+def compute_metrics_for_regression(eval_pred):
+    predictions, labels = eval_pred
+    mse = mean_squared_error(labels, predictions)
+    mae = mean_absolute_error(labels, predictions)
+    r2 = r2_score(labels, predictions)
+    return {
+        'mse': mse,
+        'mae': mae,
+        'r2': r2
+    }
 
 train_params = TrainingArguments(
-    output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
-    num_train_epochs=1,
-    per_device_train_batch_size=1,
-    gradient_accumulation_steps=1,
-    save_steps=100,
-    logging_steps=100,
+    output_dir="/n/home09/lschrage/projects/cs109b/llama_finetuned_model",
+    logging_dir="/n/home09/lschrage/projects/cs109b/llama_finetuned_model_logs",
     learning_rate=2e-4,
-    weight_decay=0.001,
-    fp16=False,
-    bf16=False,
-    max_grad_norm=0.3,
-    max_steps=-1,
-    warmup_ratio=0.03,
-    group_by_length=True,
-    lr_scheduler_type="linear",
-    report_to="wandb",
+    per_device_train_batch_size=32,
+    per_device_eval_batch_size=32,
+    warmup_steps=50,
+    fp16=True,
+    weight_decay=0.01,
+    max_steps=280,
+    metric_for_best_model="mse",
+    logging_strategy="steps",
     evaluation_strategy="steps",
-    eval_steps=100,
-    metric_for_best_model='accuracy',  
-
+    logging_steps=40,
+    eval_steps=40,
+    do_eval=True,
+    prediction_loss_only=True
 )
 
 trainer = SFTTrainer(
@@ -192,10 +212,90 @@ trainer = SFTTrainer(
     eval_dataset=val_dataset,
     tokenizer=llama_tokenizer,
     args=train_params,
-    dataset_text_field = 'input_ids'
+    dataset_text_field='input_ids',
+    max_seq_length=512,
+    data_collator=data_collator,
+    compute_metrics=compute_metrics_for_regression
 )
 
-trainer.train()
+train_result = trainer.train()
+
+def plot_predictions_vs_actual_finetune(model, test_dataset, path):
+    test_loader = DataLoader(test_dataset, batch_size=32, collate_fn=data_collator)
+    true_labels = [item['labels'].item() for item in test_dataset]
+    predicted_scores = []
+    model.eval()
+    with torch.no_grad():
+        for batch in test_loader:
+            input_ids = batch['input_ids'].to('cuda')
+            attention_mask = batch['attention_mask'].to('cuda')
+            outputs = model(input_ids, attention_mask=attention_mask)
+            batch_scores = outputs.logits.squeeze().tolist()
+            if isinstance(batch_scores, float):
+                batch_scores = [batch_scores]
+            predicted_scores.extend(batch_scores)
+
+    plt.figure(figsize=(10, 5))
+    plt.scatter(true_labels, predicted_scores, alpha=0.5)
+    plt.plot([min(true_labels), max(true_labels)], [min(true_labels), max(true_labels)], 'r--')
+    plt.title('Actual vs Predicted Sentiment Scores')
+    plt.xlabel('Actual Scores')
+    plt.ylabel('Predicted Scores')
+    plt.grid(True)
+    plt.savefig(path)
+plot_predictions_vs_actual_finetune(trainer.model, test_dataset, 'FINETUNE-llama-actual-vs-predicted.png')
+
+
+def get_predictions(model, test_dataset):
+    test_loader = DataLoader(test_dataset, batch_size=32, collate_fn=data_collator)
+    true_labels = [item['labels'].item() for item in test_dataset]
+    predicted_scores = []
+    model.eval()
+    with torch.no_grad():
+        for batch in test_loader:
+            input_ids = batch['input_ids'].to('cuda')
+            attention_mask = batch['attention_mask'].to('cuda')
+            outputs = model(input_ids, attention_mask=attention_mask)
+            batch_scores = outputs.logits.squeeze().tolist()
+            if isinstance(batch_scores, float):
+                batch_scores = [batch_scores]
+            predicted_scores.extend(batch_scores)
+    return predicted_scores, true_labels
+predicted_scores, true_labels = get_predictions(trainer.model, test_dataset)
+
+accuracy = pos_accuracy = neut_accuracy = neg_accuracy = num_pos = num_neg = num_neut = 0
+for i in range(len(predicted_scores)):
+  if true_labels[i] >= 1.0:
+    num_pos += 1
+    if predicted_scores[i] >= 1.0:
+      accuracy += 1
+      pos_accuracy += 1
+  elif true_labels[i] <= -1.0:
+    num_neg +=1
+    if predicted_scores[i] <= -1.0:
+      accuracy += 1
+      neg_accuracy += 1
+  else:
+    num_neut+=1
+    if ((predicted_scores[i] < 1.0) and (predicted_scores[i] > -1.0)):
+      accuracy += 1
+      neut_accuracy += 1
+accuracy_score = accuracy / len(predicted_scores)
+pos_score = pos_accuracy / num_pos
+neg_score = neg_accuracy / num_neg
+neut_score = neut_accuracy / num_neut
+
+
+print("Accuracy score", accuracy_score)
+print("Pos score", pos_score)
+print("Neg score", neg_score)
+print("Neut score", neut_score)
+
+
+metrics = train_result.metrics
+print(metrics)
+metrics1 = trainer.evaluate()
+print(metrics1)
 
 history = pd.DataFrame(trainer.state.log_history)
 print("Columns in history:", history.columns)
@@ -203,42 +303,51 @@ for col in history.columns:
     print(f"First 5 entries in column '{col}':")
     print(history[col].head(), "\n")
 
-##########
+from sklearn.metrics import mean_squared_error
 
-import re
+# Ensure the model is in evaluation mode
+model.eval()
 
-def extract_sentiment(prediction_text):
-    match = re.search(r'=\s*(-?\d+(?:\.\d+)?)', prediction_text)
-    if match:
-        return float(match.group(1))
-    else:
-        return 0.0
-    
+# Store predictions and actual labels
+all_preds = []
+all_labels = []
 
-def evaluate_model(dataloader):
-    model.eval() 
-    predictions = []
-    true_labels = []
+# Perform inference on the validation dataset
+with torch.no_grad():
+    for batch in val_loader:
+        input_ids = batch['input_ids'].to('cuda')
+        attention_mask = batch['attention_mask'].to('cuda')
+        labels = batch['labels'].cpu().numpy()
 
-    with torch.no_grad():
-        for batch in dataloader:
-            input_ids = batch['input_ids'].to(model.device)
-            attention_mask = batch['attention_mask'].to(model.device)
+        # Obtain model outputs
+        outputs = model(input_ids, attention_mask=attention_mask)
 
-            outputs = model.generate(input_ids=input_ids, attention_mask=attention_mask)
+        # Detach and move predictions to the CPU
+        predictions = outputs.logits.squeeze().cpu().numpy()
 
-            prediction_texts = [llama_tokenizer.decode(generated_id, skip_special_tokens=True) for generated_id in outputs]
-            sentiments = [extract_sentiment(text) for text in prediction_texts]
-            
-            predictions.extend(sentiments)
-            true_labels.extend(batch['labels'].tolist())
+        if isinstance(predictions, float):
+            predictions = [predictions]
 
-    print(true_labels)
-    mse = mean_squared_error(true_labels, predictions)
-    return mse
+        all_preds.extend(predictions)
+        all_labels.extend(labels)
 
-test_mse = evaluate_model(test_loader)
-val_mse = evaluate_model(val_loader)
+# Calculate the mean squared error
+val_mse = mean_squared_error(all_labels, all_preds)
 
-print(f'Validation MSE: {val_mse}')
-print(f'Test MSE: {test_mse}')
+print(f'Validation Mean Squared Error: {val_mse}')
+
+
+'''
+def plot_train_val_loss(train_loss, val_loss, path):
+    epochs = range(1, len(train_loss) + 1)
+    plt.figure(figsize=(10, 5))
+    plt.plot(epochs, train_loss, label='Training MSE')
+    plt.plot(epochs, val_loss, label='Validation MSE')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation MSE')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(path)
+plot_train_val_loss(train_loss, val_loss, 'FINETUNE-llama-train-val-mse.png')
+'''
