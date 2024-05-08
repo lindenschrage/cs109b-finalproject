@@ -196,13 +196,12 @@ train_params = TrainingArguments(
     fp16=True,
     weight_decay=0.01,
     max_steps=280,
-    metric_for_best_model="mse", 
-    load_best_model_at_end=True,
+    metric_for_best_model="mse",
     logging_strategy="steps",
     evaluation_strategy="steps",
     logging_steps=40,
     eval_steps=40,
-    do_eval=True
+    do_eval=True,
 )
 
 trainer = SFTTrainer(
