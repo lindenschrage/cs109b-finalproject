@@ -37,6 +37,10 @@ This repository contains all the data, models, and helper functions needed for f
 - **`requirements.txt`**  
   Required Python packages.
 
+### Environment Variables
+The Hugging Face access token is required to fetch models and is stored in a `.env` file. Ensure you have this file configured with the following content:
+ACCESS_TOKEN='your_hugging_face_access_token_here'
+
 ### Usage Instructions
 
 **Installation**  
