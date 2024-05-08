@@ -126,7 +126,7 @@ val_dataset = Dataset.from_pandas(df_val)
 test_dataset = Dataset.from_pandas(df_test)
 
 def tokenize_function(df):
-    return llama_tokenizer(df["input_ids"], padding="max_length", truncation=True, max_length=512)
+    return llama_tokenizer(df["input_ids"], padding="max_length", truncation=True, max_length=1024)
 
 train_dataset = train_dataset.map(tokenize_function, batched=True)
 val_dataset = val_dataset.map(tokenize_function, batched=True)
@@ -143,7 +143,7 @@ data_collator = DataCollatorWithPadding(tokenizer=llama_tokenizer, return_tensor
 
 train_loader = DataLoader(
     train_dataset,  
-    batch_size=32,   
+    batch_size=5,   
     shuffle=True,   
     collate_fn=data_collator,  
     drop_last=True  
@@ -151,14 +151,14 @@ train_loader = DataLoader(
 
 val_loader = DataLoader(
     val_dataset,
-    batch_size=32,
+    batch_size=5,
     shuffle=False,
     collate_fn=data_collator
 )
 
 test_loader = DataLoader(
     test_dataset,
-    batch_size=32,
+    batch_size=5,
     shuffle=False,
     collate_fn=data_collator
 )
@@ -166,9 +166,9 @@ test_loader = DataLoader(
 train_params = TrainingArguments(
     output_dir="/n/home09/lschrage/projects/cs109b/finetuned_model",
     num_train_epochs=1,
-    per_device_train_batch_size=32,
-    gradient_accumulation_steps=32,
-    save_steps=25,
+    per_device_train_batch_size=5,
+    gradient_accumulation_steps=5,
+    save_steps=100,
     logging_steps=100,
     learning_rate=2e-4,
     weight_decay=0.001,
